@@ -1,0 +1,6 @@
+[env]
+FR_DATABASE_URL = "postgres://foreman_reports:94gzdEDS3f34fsd%23~@127.0.0.1:5432/foreman_reports"
+
+[build]
+target = "x86_64-unknown-linux-musl"
+target-dir = "/home/cpeon/home/tmp/foreman_reports/target"

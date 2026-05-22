@@ -1,0 +1,377 @@
+
+create type ct_facts as (
+  host_id integer,
+  ipv4_addresses text,
+  sockets text,
+  os_version text,
+  product_name text,
+  serial_number text,
+  uuid text,
+  certdate_expiration text,
+  couchbase_version text,
+  db2_version text,
+  dfsize text,
+  gitlab_version text,
+  ihs_version text,
+  kong_version text,
+  mongodborg_version text,
+  nginx_version text,
+  redis_version text,
+  last_kernel_update text,
+  efi text,
+  selinux text,
+  varnishplus_version text,
+  jdbc_version text,
+  was_version text,
+  wxs_version text,
+  wcs_version text,
+  wmq_version text,
+  wxsserver_version text,
+  facts_datetime text,
+  boot_time text,
+  cpu text,
+  threads_per_core text,
+  memorysize text,
+  kernel_release text,
+  virtual text
+);
+
+-- UPDATE pg_language SET lanpltrusted = true WHERE lanname LIKE 'c';
+CREATE OR REPLACE FUNCTION ct_facts(text, text)
+  RETURNS SETOF ct_facts AS '$libdir/tablefunc', 'crosstab_hash'
+  LANGUAGE 'c' STABLE STRICT;
+
+create or replace function fact_names()
+  returns text[] 
+  language plpgsql
+  as
+$$
+declare
+  names text[];
+begin
+  select '{dmi::system::product_name,distribution::version,uname::release,itx_facts_ansible_local::itx_facts_nginx::version,itx_facts_ansible_local::itx_facts_varnish::plus_version,itx_facts_ansible_local::itx_facts_ihs::version,itx_facts_ansible_local::itx_facts_was::version,itx_facts_ansible_local::itx_facts_was::wxs_version,itx_facts_ansible_local::itx_facts_wcs::version,itx_facts_ansible_local::itx_facts_was::jdbc_db2_version,itx_facts_ansible_local::itx_facts_wxs::version,itx_facts_ansible_local::itx_facts_wmq::version,itx_facts_ansible_local::itx_facts_db2::version,itx_facts_ansible_local::itx_facts_couchbase::version,itx_facts_ansible_local::itx_facts_mongodb::org_version,itx_facts_ansible_local::itx_facts_kong::version,itx_facts_ansible_local::itx_facts_redis::version,cpu::cpu_socket(s),lscpu::cpu(s),dmi::system::serial_number,virt::is_guest,itx_facts_ansible_local::itx_facts_gitlab::version,itx_facts_datetime,itx_facts_ansible_local::itx_facts_rpm::kernel_date,last_boot,lscpu::thread(s)_per_core,memory::memtotal,itx_facts_ansible_local::itx_facts_df::total_gbytes,itx_facts_ansible_local::itx_facts_certificate_expiration::port_443,dmi::system::uuid,ansible_all_ipv4_addresses,itx_facts_ansible_local::itx_facts_security::efi,itx_facts_ansible_local::itx_facts_security::selinux}'::text[]
+  into names;
+  return names;
+end;
+$$;
+
+with facts as (select '{dmi::system::product_name,distribution::version,uname::release,itx_facts_ansible_local::itx_facts_nginx::version,itx_facts_ansible_local::itx_facts_varnish::plus_version,itx_facts_ansible_local::itx_facts_ihs::version,itx_facts_ansible_local::itx_facts_was::version,itx_facts_ansible_local::itx_facts_was::wxs_version,itx_facts_ansible_local::itx_facts_wcs::version,itx_facts_ansible_local::itx_facts_was::jdbc_db2_version,itx_facts_ansible_local::itx_facts_wxs::version,itx_facts_ansible_local::itx_facts_wmq::version,itx_facts_ansible_local::itx_facts_db2::version,itx_facts_ansible_local::itx_facts_couchbase::version,itx_facts_ansible_local::itx_facts_mongodb::org_version,itx_facts_ansible_local::itx_facts_kong::version,itx_facts_ansible_local::itx_facts_redis::version,cpu::cpu_socket(s),lscpu::cpu(s),dmi::system::serial_number,virt::is_guest,itx_facts_ansible_local::itx_facts_gitlab::version,itx_facts_datetime,itx_facts_ansible_local::itx_facts_rpm::kernel_date,last_boot,lscpu::thread(s)_per_core,memory::memtotal,itx_facts_ansible_local::itx_facts_df::total_gbytes,itx_facts_ansible_local::itx_facts_certificate_expiration::port_443,dmi::system::uuid,ansible_all_ipv4_addresses,itx_facts_ansible_local::itx_facts_security::efi,itx_facts_ansible_local::itx_facts_security::selinux}'::text[] as names)
+select host_id, fact_name_id, value
+from digital.fact_values fv
+  join digital.fact_names fn on
+    fn.id = fv.fact_name_id and
+    fn.name = any fact_names()
+order by host_id asc
+
+ 
+    SELECT * FROM crosstab(
+      'select host_id, fact_name_id, value
+      from digital.fact_values fv
+        join digital.fact_names fn on
+          fn.id = fv.fact_name_id and
+          fn.name = any ((select array_agg(name) from facts)::text[])
+      order by host_id asc',
+      'select id as fact_name_id
+      from digital.fact_names 
+      where name = any ((select array_agg(name) from facts)::text[])
+      order by name asc'
+
+
+DROP MATERIALIZED VIEW full_report;
+CREATE MATERIALIZED VIEW IF NOT EXISTS full_report as
+select
+  'digital' as bu,
+  h.id as id,
+  h.name as hostname,
+  t.name as location,
+  e.name as environment,
+  h.last_report as last_report,
+  h.updated_at as updated_at,
+  su.name as subnet,
+  h.comment as comment,
+  json_build_object(
+    'product_name', f.product_name,
+    'serial_number', f.serial_number,
+    'uuid', f.uuid,
+    'virtual', f.virtual,
+    'os_version', f.os_version,
+    'kernel_release', f.kernel_release,
+    'sockets', f.sockets,
+	  'cpu', cast(f.cpu as int) / cast(f.threads_per_core as int),
+    'memorysize', cast(cast(f.memorysize as float) / 1024 / 1024 as decimal(10,2)),
+    'dfsize', CASE
+	    WHEN f.dfsize is not null AND f.dfsize != '' THEN
+        cast(cast(f.dfsize as float) as decimal(12,0))
+      ELSE NULL
+    END,
+    'boot_time', f.boot_time,
+    'ipv4_addresses', f.ipv4_addresses,
+    'last_kernel_update', date_part('day', now() - f.last_kernel_update::date)::integer,
+    'security_erratas', coalesce(security_errata_values.erratas, 0),
+    'older_errata', security_errata_values.oldererrata, 
+    'errata_list', security_errata_values.erratalist,
+    'cve_list', security_errata_values.cvelist,
+    'facts_datetime', f.facts_datetime,
+    'efi', f.efi,
+    'selinux', f.selinux,
+    'couchbase_version', f.couchbase_version,
+    'certdate_expiration', f.certdate_expiration,
+    'db2_version', f.db2_version,
+    'gitlab_version', f.gitlab_version,
+    'ihs_version', f.ihs_version,
+    'jdbc_version', f.jdbc_version,
+    'kong_version', f.kong_version,
+    'mongodborg_version', f.mongodborg_version,
+    'nginx_version', f.nginx_version,
+    'redis_version', f.redis_version,
+    'varnishplus_version', f.varnishplus_version,
+    'was_version', f.was_version,
+    'wcs_version', f.wcs_version,
+    'wmq_version', f.wmq_version,
+    'wxs_version', f.wxs_version,
+    'wxsserver_version', f.wxsserver_version
+  ) as facts
+from digital.hosts h 
+  inner join digital.taxonomies t
+    on h.location_id = t.id
+  inner join digital.katello_content_facets kcf
+    on h.id = kcf.host_id
+  inner join digital.katello_content_view_environment_content_facets kcvecf
+    on kcf.id = kcvecf.content_facet_id
+  inner join digital.katello_content_view_environments kcve 
+    on kcvecf.content_view_environment_id = kcve.id
+  inner join digital.katello_environments e 
+    on kcve.environment_id = e.id
+  left join (
+    digital.nics ni inner join digital.subnets su on
+    su.id = ni.subnet_id
+    and ni.primary = true
+  ) on
+    ni.host_id = h.id
+  left join (
+    select f.host_id, count(e.*) as erratas,
+      min(ke.issued) as oldererrata,
+      string_agg(ke.errata_id, ',') as erratalist,
+      string_agg(cves.cvelist, ',') as cvelist
+    from digital.katello_content_facets f
+      inner join digital.katello_content_facet_repositories fr
+        on f.id = fr.content_facet_id
+      inner join ( 
+        digital.katello_content_facet_errata e
+        inner join digital.katello_repository_errata re
+          on e.erratum_id = re.erratum_id
+        inner join digital.katello_errata ke
+          on (e.erratum_id = ke.id and ke.errata_type = 'security')
+        left join (
+          select erratum_id,  string_agg(cve_id, ',') as cvelist
+          from digital.katello_erratum_cves
+          group by erratum_id
+          ) cves
+          on e.erratum_id = cves.erratum_id
+      ) on 
+        f.id = e.content_facet_id and fr.repository_id = re.repository_id
+    group by f.host_id
+  ) security_errata_values on
+    security_errata_values.host_id = h.id
+  left join (
+    SELECT * FROM crosstab(
+      'select host_id, fact_name_id, value
+      from digital.fact_values fv
+        join digital.fact_names fn on
+          fn.id = fv.fact_name_id and
+          fn.name = any ((select array_agg(name) from facts)::text[])
+      order by host_id asc',
+      'select id as fact_name_id
+      from digital.fact_names 
+      where name = any ((select array_agg(name) from facts)::text[])
+      order by name asc'
+    ) as ct(
+      host_id integer,
+      ipv4_addresses text,
+      sockets text,
+      os_version text,
+      product_name text,
+      serial_number text,
+      uuid text,
+      certdate_expiration text,
+      couchbase_version text,
+      db2_version text,
+      dfsize text,
+      gitlab_version text,
+      ihs_version text,
+      kong_version text,
+      mongodborg_version text,
+      nginx_version text,
+      redis_version text,
+      last_kernel_update text,
+      efi text,
+      selinux text,
+      varnishplus_version text,
+      jdbc_version text,
+      was_version text,
+      wxs_version text,
+      wcs_version text,
+      wmq_version text,
+      wxsserver_version text,
+      facts_datetime text,
+      boot_time text,
+      cpu text,
+      threads_per_core text,
+      memorysize text,
+      kernel_release text,
+      virtual text
+    )
+  ) f on
+    f.host_id = h.id
+union all
+select
+  'sscc' as bu,
+  h.id as id,
+  h.name as hostname,
+  t.name as location,
+  e.name as environment,
+  h.last_report as last_report,
+  h.updated_at as updated_at,
+  su.name as subnet,
+  h.comment as comment,
+  json_build_object(
+    'product_name', f.product_name,
+    'serial_number', f.serial_number,
+    'uuid', f.uuid,
+    'virtual', f.virtual,
+    'os_version', f.os_version,
+    'kernel_release', f.kernel_release,
+    'sockets', f.sockets,
+	  'cpu', cast(f.cpu as int) / cast(f.threads_per_core as int),
+    'memorysize', cast(cast(f.memorysize as float) / 1024 / 1024 as decimal(10,2)),
+    'dfsize', CASE
+	    WHEN f.dfsize is not null AND f.dfsize != '' THEN
+        cast(cast(f.dfsize as float) as decimal(12,0))
+      ELSE NULL
+    END,
+    'boot_time', f.boot_time,
+    'ipv4_addresses', f.ipv4_addresses,
+    'last_kernel_update', date_part('day', now() - f.last_kernel_update::date)::integer,
+    'security_erratas', coalesce(security_errata_values.erratas, 0),
+    'older_errata', security_errata_values.oldererrata, 
+    'errata_list', security_errata_values.erratalist,
+    'cve_list', security_errata_values.cvelist,
+    'facts_datetime', f.facts_datetime,
+    'efi', f.efi,
+    'selinux', f.selinux,
+    'couchbase_version', f.couchbase_version,
+    'certdate_expiration', f.certdate_expiration,
+    'db2_version', f.db2_version,
+    'gitlab_version', f.gitlab_version,
+    'ihs_version', f.ihs_version,
+    'jdbc_version', f.jdbc_version,
+    'kong_version', f.kong_version,
+    'mongodborg_version', f.mongodborg_version,
+    'nginx_version', f.nginx_version,
+    'redis_version', f.redis_version,
+    'varnishplus_version', f.varnishplus_version,
+    'was_version', f.was_version,
+    'wcs_version', f.wcs_version,
+    'wmq_version', f.wmq_version,
+    'wxs_version', f.wxs_version,
+    'wxsserver_version', f.wxsserver_version
+  ) as facts
+from sscc.hosts h 
+  inner join sscc.taxonomies t
+    on h.location_id = t.id
+  inner join sscc.katello_content_facets kcf
+    on h.id = kcf.host_id
+  inner join sscc.katello_content_view_environment_content_facets kcvecf
+    on kcf.id = kcvecf.content_facet_id
+  inner join sscc.katello_content_view_environments kcve 
+    on kcvecf.content_view_environment_id = kcve.id
+  inner join sscc.katello_environments e 
+    on kcve.environment_id = e.id
+  left join (
+    sscc.nics ni inner join sscc.subnets su on
+    su.id = ni.subnet_id
+    and ni.primary = true
+  ) on
+    ni.host_id = h.id
+  left join (
+    select f.host_id, count(e.*) as erratas,
+      min(ke.issued) as oldererrata,
+      string_agg(ke.errata_id, ',') as erratalist,
+      string_agg(cves.cvelist, ',') as cvelist
+    from sscc.katello_content_facets f
+      inner join sscc.katello_content_facet_repositories fr
+        on f.id = fr.content_facet_id
+      inner join ( 
+        sscc.katello_content_facet_errata e
+        inner join sscc.katello_repository_errata re
+          on e.erratum_id = re.erratum_id
+        inner join sscc.katello_errata ke
+          on (e.erratum_id = ke.id and ke.errata_type = 'security')
+        left join (
+          select erratum_id,  string_agg(cve_id, ',') as cvelist
+          from sscc.katello_erratum_cves
+          group by erratum_id
+          ) cves
+          on e.erratum_id = cves.erratum_id
+      ) on 
+        f.id = e.content_facet_id and fr.repository_id = re.repository_id
+    group by f.host_id
+  ) security_errata_values on
+    security_errata_values.host_id = h.id
+  left join (
+    SELECT * FROM crosstab(
+      'select host_id, fact_name_id, value
+      from sscc.fact_values fv
+        join sscc.fact_names fn on
+          fn.id = fv.fact_name_id and
+          fn.name = any ((select array_agg(name) from facts)::text[])
+      order by host_id asc',
+      'select id as fact_name_id
+      from sscc.fact_names 
+      where name = any ((select array_agg(name) from facts)::text[])
+      order by name asc'
+    ) as ct(
+      host_id integer,
+      ipv4_addresses text,
+      sockets text,
+      os_version text,
+      product_name text,
+      serial_number text,
+      uuid text,
+      certdate_expiration text,
+      couchbase_version text,
+      db2_version text,
+      dfsize text,
+      gitlab_version text,
+      ihs_version text,
+      kong_version text,
+      mongodborg_version text,
+      nginx_version text,
+      redis_version text,
+      last_kernel_update text,
+      efi text,
+      selinux text,
+      varnishplus_version text,
+      jdbc_version text,
+      was_version text,
+      wxs_version text,
+      wcs_version text,
+      wmq_version text,
+      wxsserver_version text,
+      facts_datetime text,
+      boot_time text,
+      cpu text,
+      threads_per_core text,
+      memorysize text,
+      kernel_release text,
+      virtual text
+    )
+  ) f on
+    f.host_id = h.id
+with data;
+
+CREATE UNIQUE INDEX full_report_id on full_report(bu, id);
+grant select on full_report to foreman_reports;
+insert into materialized_views (name, refreshed_at) values ('full_report', CURRENT_TIMESTAMP);
+
+

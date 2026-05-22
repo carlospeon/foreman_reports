@@ -1,0 +1,17 @@
+[Unit]
+Description=Foreman Reports
+After=network.target remote-fs.target nss-lookup.target
+
+[Service]
+Type=simple
+EnvironmentFile=-/etc/sysconfig/foreman_reports
+ExecStart=/usr/local/sbin/foreman_reports -c /etc/foreman_reports.toml
+User=foreman_reports
+Group=foreman_reports
+KillSignal=SIGQUIT
+TimeoutStopSec=30
+#Nice=10
+
+[Install]
+WantedBy=multi-user.target
+

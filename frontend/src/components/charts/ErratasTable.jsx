@@ -1,0 +1,183 @@
+import { MessageProvider } from "../common/MessageProvider";
+import { useContextMessage } from "../common/MessageProvider";
+//import Navigation from './Navigation';
+//import Message from './Message';
+
+import { createResource, useContext, For } from "solid-js";
+import { ReportTable } from "../common/Tables";
+import JsonMessage from "../common/JsonMessage";
+import { capitalize } from "../common/Util";
+import NonCompliantByEnvironmentBuChart from "../charts/NonCompliantByEnvironmentBuChart";
+import NonCompliantByBuTable from "../charts/NonCompliantByBuTable";
+
+import {
+  flexRender,
+  getCoreRowModel,
+  createSolidTable,
+} from "@tanstack/solid-table";
+
+export default function ErratasTable(props) {
+  //const [message, setMessage] = useContextMessage();
+
+  var apiUrl = "/api/hosts/erratas";
+  if (typeof props.ts !== "undefined") {
+    apiUrl = apiUrl + "/noncompliant/" + props.ts;
+  }
+  const apiFetch = async () => {
+    const f = await fetch(apiUrl);
+    const j = await f.json();
+    return { fetch: f, json: j };
+  };
+
+  const [apiResource] = createResource(apiFetch);
+  // const [jsonResource] = createResource(apiResource, apiJson);
+
+  var columns = [
+    {
+      accessorKey: "hostname",
+      header: (v) => capitalize(v.column.id),
+      cell: (v) => v.getValue(),
+      class: "text-align-left",
+      footer: (v) => capitalize(v.column.id),
+    },
+    {
+      accessorKey: "bu",
+      header: (v) => capitalize(v.column.id),
+      cell: (v) => v.getValue(),
+      class: "text-align-left",
+      footer: (v) => capitalize(v.column.id),
+    },
+    {
+      accessorKey: "comment",
+      header: () => "Description",
+      cell: (v) => v.getValue(),
+      class: "text-align-left overflow",
+      footer: () => "Description",
+    },
+    {
+      accessorKey: "updated_at",
+      header: "Updated",
+      cell: (v) => v.getValue(),
+      class: "text-align-left",
+      footer: "Updated",
+    },
+    {
+      accessorKey: "location",
+      header: (v) => capitalize(v.column.id),
+      cell: (v) => v.getValue(),
+      class: "text-align-left",
+      footer: (v) => capitalize(v.column.id),
+    },
+    {
+      accessorKey: "environment",
+      header: (v) => capitalize(v.column.id),
+      cell: (v) => v.getValue(),
+      class: "text-align-left",
+      footer: (v) => capitalize(v.column.id),
+    },
+    {
+      accessorKey: "os_version",
+      header: "OS",
+      cell: (v) => v.getValue(),
+      class: "text-align-right",
+      footer: "OS",
+    },
+    {
+      accessorKey: "compliant",
+      header: "Compliant",
+      cell: (v) => v.getValue().toString(),
+      class: "text-align-left",
+      footer: "Compliant",
+      filterFn: "includesString",
+    },
+    {
+      accessorKey: "security_erratas",
+      header: "Erratas",
+      cell: (v) => v.getValue(),
+      class: "text-align-right",
+      footer: "Erratas",
+      filterFn: "weakEquals",
+    },
+    {
+      accessorKey: "older_errata",
+      header: "Older errata",
+      cell: (v) => v.getValue(),
+      class: "text-align-left",
+      footer: "Older errata",
+    },
+    {
+      accessorKey: "errata_list",
+      header: "Errata list",
+      cell: (v) => v.getValue(),
+      class: "text-align-left overflow",
+      footer: "Errata list",
+    },
+    {
+      accessorKey: "cve_list",
+      header: "CVE list",
+      cell: (v) => v.getValue(),
+      class: "text-align-left overflow",
+      footer: "CVE list",
+    },
+    // { accessorKey: 'hardware', accessorFn: r => r.facts.product_name, header: 'Hardware', cell: v => v.getValue(),
+    //   class: 'text-align-left', footer: 'Hardware', },
+    // { accessorKey: 'os_version', accessorFn: r => r.facts.os_version, header: 'OS', cell: v => v.getValue(),
+    //   class: 'text-align-right', footer: 'OS', },
+    // { accessorKey: 'kernel_release', accessorFn: r => r.facts.kernel_release, header: 'Kernel', cell: v => v.getValue(),
+    //   class: 'text-align-right', footer: 'Kernel', },
+  ];
+
+  const tableOptions = () => {
+    return {
+      data: apiResource().json.result,
+      columns: columns,
+      getCoreRowModel: getCoreRowModel(),
+    };
+  };
+
+  return (
+    <Switch fallback={<div>Not Found</div>}>
+      <Match when={apiResource.state === "pending"}>
+        <div class="loading">Loading...</div>
+      </Match>
+      <Match when={apiResource.state === "errored"}>
+        <JsonMessage
+          message={{
+            status: apiResource.state,
+            result: String(apiResource.error),
+          }}
+        />
+      </Match>
+      <Match
+        when={
+          apiResource.state === "ready" && apiResource().fetch.status != 200
+        }
+      >
+        <JsonMessage
+          message={{
+            status: apiResource().fetch.status,
+            result: apiResource().json.result,
+          }}
+        />
+      </Match>
+      <Match
+        when={
+          apiResource.state === "ready" && apiResource().fetch.status == 200
+        }
+      >
+        <div class="links flex">
+          <a
+            style="margin-left: auto"
+            target="_self"
+            href={apiUrl + "?accept=csv"}
+          >
+            Donwload CSV
+          </a>
+        </div>
+        <div>
+          <ReportTable options={tableOptions()} />
+        </div>
+      </Match>
+    </Switch>
+  );
+}
