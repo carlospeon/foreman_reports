@@ -350,7 +350,7 @@ div.report {
   padding: var(--spacing-sm);
   background: var(--color-surface);
   border: 1px solid var(--color-tertiary);
-  border-radius: var(--rounded-md);
+  border-radius: 0;
   margin: 10px;
   position: relative;
 }
@@ -486,7 +486,7 @@ div.tfilter {
 }
 input.tfilter {
   border: 1px solid var(--color-tertiary);
-  border-radius: var(--rounded-sm);
+  border-radius: 0;
   padding: 1px 5px;
   margin: 1px;
   width: 100%;
@@ -527,7 +527,7 @@ div.pagination button {
   min-width: 40px;
   color: var(--color-on-surface);
   background-color: transparent;
-  border-radius: var(--rounded-sm);
+  border-radius: 0;
   border: 1px solid var(--color-tertiary);
   padding: 4px 8px;
   cursor: pointer;
