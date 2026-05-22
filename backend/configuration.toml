@@ -1,0 +1,17 @@
+[server]
+listen = "127.0.0.1:3000"
+docroot = "static"
+concurrency_limit = 10
+loglevel = "info"
+
+[database]
+materialized_view_ttl = 1
+max_connections = 10
+
+[ldap]
+url = "ldaps://localhost:3269"
+domain = "domain.internal"
+search = "dc=domain,dc=internal"
+member_of = "CN=foremanreports,OU=Produccion,DC=domain,DC=internal"
+
+

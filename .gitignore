@@ -1,0 +1,10 @@
+ignore/
+.claude/
+frontend/package-lock.json
+frontend/node_modules/
+frontend/dist/
+backend/.cargo
+backend/Cargo.lock
+backend/static/
+postgresql/itx/
+axinecgrafana1/

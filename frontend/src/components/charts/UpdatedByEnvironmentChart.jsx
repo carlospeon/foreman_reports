@@ -1,0 +1,120 @@
+import { onMount } from 'solid-js'
+import { Bar } from 'solid-chartjs'
+import { createResource, For } from 'solid-js';
+import { getCoreRowModel } from '@tanstack/solid-table';
+import { useContextMessage } from "../common/MessageProvider";
+import JsonMessage from "../common/JsonMessage";
+import { LegendTable } from '../common/Tables';
+import { registerChartPlugins, barOptions } from './chartConfig';
+
+export default function UpdatedByEnvironmentChart(props) {
+  const [message, setMessage] = useContextMessage();
+
+  var apiUrl = '/api/updated/groupby/environment';
+  if (typeof(props.ts) !== 'undefined') {
+    apiUrl = apiUrl + "/" + props.ts;
+  }
+  const apiFetch = async () => {
+    const f = await fetch(apiUrl);
+    const j = await f.json();
+    return {fetch: f, json: j};
+  }
+  // const apiFetch = async () => await fetch(apiUrl);
+  // const apiJson = async (f) => await f.json();
+
+  const [apiResource] = createResource(apiFetch);
+  // const [jsonResource] = createResource(apiResource, apiJson);
+
+
+  var columns = [
+    { accessorKey: 'environment', header: 'Environment', cell: v => v.getValue(), class: 'text-align-left', footer: 'Environment' },
+    { accessorKey: 'total', header: 'Total', cell: v => v.getValue(), class: 'text-align-right', footer: 'Total' },
+    { accessorKey: 'supported', header: 'Supported', cell: v => v.getValue(), class: 'text-align-right', footer: 'Suported' },
+    { accessorKey: 'updated', header: 'Updated', cell: v => v.getValue(), class: 'text-align-right', footer: 'Updated' },
+    // { accessorKey: 'total', header: 'Total', cell: v => v.getValue(), class: 'text-align-right',
+    //   footer: ({table}) => table.getFilteredRowModel().rows.reduce((total, row) => total + row.getValue('count'), 0),
+    // },
+  ];
+
+  const tableOptions = () => {
+    return {
+      data: apiResource().json.result,
+      columns: columns,
+      getCoreRowModel: getCoreRowModel(),
+    };
+  }
+
+  onMount(() => registerChartPlugins())
+
+  const fallback = () => {
+    return (<div><p>Chart is not available</p></div>)
+  }
+
+  const chartOptions = () => barOptions('Environment', 'Hosts');
+
+  const chartData = () => {
+    return {
+        labels: apiResource().json.result.map(function(i) { return i.environment; }),
+        datasets: [
+          {
+            label: 'Supported',
+            data: apiResource().json.result.map(function(i) { return i.supported; }),
+            backgroundColor: '#36a2eb',
+            stack: '0',
+          },
+          {
+            label: 'Non Supported',
+            data: apiResource().json.result.map(function(i) { return i.total - i.supported; }),
+            backgroundColor: '#dddddd',
+            stack: '0',
+          },
+          {
+            label: 'Updated',
+            data: apiResource().json.result.map(function(i) { return i.updated; }),
+            backgroundColor: '#ff6384',
+            stack: '1',
+          },
+          {
+            label: 'Non Updated',
+            data: apiResource().json.result.map(function(i) { return i.total - i.updated; }),
+            backgroundColor: '#dddddd',
+            stack: '1',
+          },
+      ],
+    }
+  }
+
+  return (
+    <Switch fallback={<div>Not Found</div>}>
+      <Match when={apiResource.state === 'pending' }>
+        <div class="loading">Loading...</div>
+      </Match>
+      <Match when={apiResource.state === 'errored'}>
+        <JsonMessage message={{
+          status: apiResource.state, 
+          result: String(apiResource.error)
+        }}/>
+      </Match>
+      <Match when={ apiResource.state === 'ready' && apiResource().fetch.status != 200 }>
+        <JsonMessage message={{
+          status: apiResource().fetch.status, 
+          result: apiResource().json.result
+        }}/>
+      </Match>
+      <Match when={ apiResource.state === 'ready' && apiResource().fetch.status == 200  }>
+        <div class="report">
+          <div style="height: 400px; width: 500px;">
+            <Bar
+              fallback={fallback()}
+              data={chartData()}
+              options={chartOptions()}
+            />
+          </div>
+          <div>
+            <LegendTable options={tableOptions()} showHeader={true} />
+          </div>
+        </div>
+      </Match>
+    </Switch>
+  )
+}
