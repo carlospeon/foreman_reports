@@ -1,5 +1,4 @@
 use axum::{
-  async_trait,
   extract::{FromRef, FromRequestParts, Path, Query, State},
   http::{request::Parts, StatusCode},
   response::IntoResponse,
@@ -93,7 +92,6 @@ impl<'a> Into<MatView<'a>> for (&'a str, i32) {
 type DatabaseConnectionResult = std::result::Result<sqlx::pool::PoolConnection<sqlx::Postgres>, sqlx::Error>;
 pub struct DatabaseConnection(DatabaseConnectionResult);
 
-#[async_trait]
 impl<S> FromRequestParts<S> for DatabaseConnection
 where
     AppState: FromRef<S>,

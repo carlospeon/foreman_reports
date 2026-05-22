@@ -60,10 +60,8 @@ impl Default for Configuration {
 impl Configuration {
   pub fn new(file: &str) -> Result<Self, ConfigError> {
 
-    let default_config = Config::try_from(&Configuration::default())
-      .expect("Serialization failed");
     let cfg_builder = Config::builder()
-      .add_source(default_config)
+      .add_source(Config::try_from(&Configuration::default()).expect("Serialization failed"))
       .add_source(config::File::with_name(file))
       .add_source(config::Environment::with_prefix("FR").separator("_"))
       .build()?;

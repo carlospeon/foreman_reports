@@ -3,15 +3,11 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use axum_login::{
-    axum_sessions::{async_session::MemoryStore as SessionMemoryStore, SessionLayer},
-    memory_store::MemoryStore as AuthMemoryStore,
-    AuthLayer
-};
+use axum_login::AuthManagerLayerBuilder;
+use tower_sessions::{MemoryStore, SessionManagerLayer};
 
 use clap::Parser;
 use http::Method;
-use rand::Rng;
 use sqlx::postgres::{PgPool, PgPoolOptions};
 use std::{
     collections::HashMap,
@@ -83,10 +79,6 @@ async fn main() {
         }
         true => Level::DEBUG
     };
-    /*let loglevel = match Level::from_str(&configuration.server.loglevel) {
-        Err(error) => panic!("invalid loglevel value: {:?}", error),
-        Ok(level) => level
-    };*/
 
     tracing_subscriber::fmt()
         .with_max_level(loglevel)
@@ -113,17 +105,16 @@ async fn main() {
     };
     let concurency_limit = configuration.server.concurency_limit;
 
-    let mut secret = [0u8; 64];
-    rand::thread_rng().fill(&mut secret);
+    let session_store = MemoryStore::default();
+    let session_layer = SessionManagerLayer::new(session_store);
 
-    let session_store = SessionMemoryStore::new();
-    let session_layer = SessionLayer::new(session_store, &secret);
+    let user_store: Arc<RwLock<HashMap<String, User>>> = Arc::new(RwLock::new(HashMap::default()));
 
-    let hashmap_store: HashMap<String, User> = HashMap::default();
-    let user_store = Arc::new(RwLock::new(hashmap_store));
-
-    let auth_store = AuthMemoryStore::new(&user_store);
-    let auth_layer = AuthLayer::new(auth_store, &secret);
+    let backend = authentication::Backend::new(
+        configuration.ldap.clone(),
+        user_store.clone(),
+    );
+    let auth_layer = AuthManagerLayerBuilder::new(backend, session_layer).build();
 
     // setup connection pool
     let pool = PgPoolOptions::new()
@@ -139,12 +130,12 @@ async fn main() {
     }
     tracing::debug!("PgPool options: {:?}", pool.options());
 
-    let state = AppState{ configuration: configuration, 
-                          pool: pool, 
+    let state = AppState{ configuration: configuration,
+                          pool: pool,
                           user_store: user_store };
 
     let cors = CorsLayer::new()
-        .allow_methods(vec![Method::GET, Method::POST])
+        .allow_methods([Method::GET, Method::POST])
         .allow_origin(Any);
 
     let static_service = ServeDir::new("static").not_found_service(ServeFile::new("static/index.html"));
@@ -153,7 +144,7 @@ async fn main() {
         .route("/test", get(reports::get_test::<Test>));
 
     let host_routes = Router::new()
-        .route("/info/:key", get(reports::get_with_path_param::<HostInfo>))
+        .route("/info/{key}", get(reports::get_with_path_param::<HostInfo>))
         .route("/groupby/osmajor", get(reports::get::<HostsGroupbyOsmajor>))
         .route("/groupby/osmajor/history", get(reports::get::<HostsGroupbyOSmajorHistory>))
         .route("/groupby/environment", get(reports::get::<HostsGroupbyEnvironment>))
@@ -167,17 +158,17 @@ async fn main() {
         .route("/groupby/location/environment", get(reports::get::<HostsGroupbyLocationEnvironment>))
         .route("/resources/groupby/location", get(reports::get::<OSResourcesByLocation>))
         .route("/erratas", get(reports::get::<ErrataCompliant>))
-        .route("/erratas/noncompliant/:days", get(reports::get_noncompliant_erratas::<ErrataCompliant>))
+        .route("/erratas/noncompliant/{days}", get(reports::get_noncompliant_erratas::<ErrataCompliant>))
         .route("/erratas/groupby/bu", get(reports::get::<ErrataCompliantGroupbyBu>))
-        .route("/erratas/groupby/bu/noncompliant/:days", 
+        .route("/erratas/groupby/bu/noncompliant/{days}",
             get(reports::get_noncompliant_erratas::<ErrataCompliantGroupbyBu>))
         .route("/erratas/groupby/environment/bu", get(reports::get::<ErrataCompliantGroupbyEnvironmentBu>))
-        .route("/erratas/groupby/environment/bu/noncompliant/:days", 
+        .route("/erratas/groupby/environment/bu/noncompliant/{days}",
             get(reports::get_noncompliant_erratas::<ErrataCompliantGroupbyEnvironmentBu>))
         .route("/facts", get(reports::get::<VisibleFacts>))
-        .route("/facts/:key", get(reports::get_with_path_param::<Fact>))
-        .route("/groupby/fact/:key", get(reports::get_with_path_filter::<HostsGroupbyFact>))
-        .route("/groupby/fact/:key/:value", get(reports::get_with_path_filter::<HostsGroupbyFact>));
+        .route("/facts/{key}", get(reports::get_with_path_param::<Fact>))
+        .route("/groupby/fact/{key}", get(reports::get_with_path_filter::<HostsGroupbyFact>))
+        .route("/groupby/fact/{key}/{value}", get(reports::get_with_path_filter::<HostsGroupbyFact>));
 
     let updated_routes = Router::new()
         .route("/", get(reports::get::<Updated>))
@@ -194,13 +185,12 @@ async fn main() {
     let report_routes = Router::new()
         .route("/os", get(reports::get::<OSReport>))
         .route("/facts", get(reports::get::<HostFactsReport>))
-        .route("/facts/:key", get(reports::get_with_path_filter::<FactsReport>))
-        .route("/facts/:key/:value", get(reports::get_with_path_filter::<FactsReport>))
-        .route("/facts/:key/cpu/groupby/environment", get(reports::get_with_path_filter::<CPUFactsReportGroupByEnvironment>))
-        .route("/facts/:key/cpu/history", get(reports::get::<CPUFactsHistory>))
-        .route("/facts/:key/groupby/environment", get(reports::get_with_path_filter::<FactsReportGroupByEnvironment>))
-        .route("/facts/:key/:value/groupby/environment", get(reports::get_with_path_filter::<FactsReportGroupByEnvironment>));
-        // .route("/errata", get(reports::get::<ErrataReport>));
+        .route("/facts/{key}", get(reports::get_with_path_filter::<FactsReport>))
+        .route("/facts/{key}/{value}", get(reports::get_with_path_filter::<FactsReport>))
+        .route("/facts/{key}/cpu/groupby/environment", get(reports::get_with_path_filter::<CPUFactsReportGroupByEnvironment>))
+        .route("/facts/{key}/cpu/history", get(reports::get::<CPUFactsHistory>))
+        .route("/facts/{key}/groupby/environment", get(reports::get_with_path_filter::<FactsReportGroupByEnvironment>))
+        .route("/facts/{key}/{value}/groupby/environment", get(reports::get_with_path_filter::<FactsReportGroupByEnvironment>));
 
     let errata_routes = Router::new()
         .route("/", get(reports::get::<Erratas>));
@@ -213,8 +203,8 @@ async fn main() {
 
     let openscap_routes = Router::new()
         .route("/", get(reports::get::<OpenscapReport>))
-        .route("/host/:key", get(reports::get_with_path_param::<OpenscapHostReport>))
-        .route("/rule/:key", get(reports::get_with_path_filter::<OpenscapRuleReport>));
+        .route("/host/{key}", get(reports::get_with_path_param::<OpenscapHostReport>))
+        .route("/rule/{key}", get(reports::get_with_path_filter::<OpenscapRuleReport>));
 
     let app = Router::new()
         .nest("/api", test_routes)
@@ -236,15 +226,13 @@ async fn main() {
                 .level(loglevel)),)
         .layer(ConcurrencyLimitLayer::new(concurency_limit))
         .layer(auth_layer)
-        .layer(session_layer)
         .layer(cors)
         .fallback_service(static_service);
 
-    // run it with hyper
-    let addr = SocketAddr::from(server);
-    tracing::info!("starting server on {}", addr);
-    axum::Server::bind(&addr)
-        .serve(app.into_make_service())
+    // run it
+    let listener = tokio::net::TcpListener::bind(server).await.unwrap();
+    tracing::info!("starting server on {}", server);
+    axum::serve(listener, app.into_make_service())
         .await
         .unwrap();
 }

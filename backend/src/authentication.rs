@@ -1,23 +1,15 @@
 use axum::{
-  async_trait,
-  extract::{self, Query, State, FromRequestParts},
-  headers::authorization::{Authorization, Basic},
-  headers::{Referer},
-  http::{request::Parts, StatusCode, HeaderMap},
+  extract::{Query, State},
+  http::{StatusCode, HeaderMap},
   middleware::Next,
   response::{IntoResponse, Response},
-  RequestPartsExt,
-  TypedHeader,
 };
-use axum_login::{
-  memory_store::MemoryStore,
-  secrecy::SecretVec,
-  AuthUser,
-};
+use axum_extra::headers::{authorization::{Authorization, Basic}, Referer};
+use axum_login::{AuthUser, AuthnBackend, AuthSession};
 
-use http::{header::InvalidHeaderValue, Request};
+use http::Request;
 use ldap3::{LdapConnAsync, LdapConnSettings, LdapResult, ResultEntry, Scope, SearchEntry,
-  result::{LdapError}};
+  result::LdapError};
 
 use serde::Deserialize;
 use std::{
@@ -47,55 +39,93 @@ pub struct User {
 impl User {
   pub fn new(login: String, full_name: String) -> Self {
     Self {
-      login: login,
-      full_name: full_name,
+      login,
+      full_name,
     }
   }
 }
 
-impl AuthUser<String> for User {
-  fn get_id(&self) -> String {
+impl AuthUser for User {
+  type Id = String;
+
+  fn id(&self) -> Self::Id {
     self.login.clone()
   }
-  fn get_password_hash(&self) -> SecretVec<u8> {
-    SecretVec::new(self.login.clone().into())
+
+  fn session_auth_hash(&self) -> &[u8] {
+    self.login.as_bytes()
   }
 }
 
-type AuthContext = axum_login::extractors
-    ::AuthContext<String, User, MemoryStore<String, User>>;
+#[derive(Clone)]
+pub struct Backend {
+  ldap_config: Ldap,
+  user_store: Arc<RwLock<HashMap<String, User>>>,
+}
+
+impl Backend {
+  pub fn new(ldap_config: Ldap, user_store: Arc<RwLock<HashMap<String, User>>>) -> Self {
+    Self { ldap_config, user_store }
+  }
+}
+
+#[derive(Clone, Deserialize)]
+pub struct Credentials {
+  pub username: String,
+  pub password: String,
+}
+
+impl AuthnBackend for Backend {
+  type User = User;
+  type Credentials = Credentials;
+  type Error = std::convert::Infallible;
+
+  async fn authenticate(&self, creds: Self::Credentials) -> Result<Option<Self::User>, Self::Error> {
+    let user = match ldap_auth(&self.ldap_config, creds.username, creds.password).await {
+      Err(_) => return Ok(None),
+      Ok(u) => u
+    };
+    self.user_store.write().await.insert(user.login.clone(), user.clone());
+    Ok(Some(user))
+  }
+
+  async fn get_user(&self, user_id: &axum_login::UserId<Self>) -> Result<Option<Self::User>, Self::Error> {
+    Ok(self.user_store.read().await.get(user_id).cloned())
+  }
+}
+
+pub type AuthContext = AuthSession<Backend>;
 
 #[derive(Clone)]
 pub struct Claims(
-  Option<Basic>, 
+  Option<Basic>,
   Option<Referer>
 );
 
-#[async_trait]
-impl<S> FromRequestParts<S> for Claims
-where
-  S: Send + Sync,
-{
-  type Rejection = std::convert::Infallible;
+impl Claims {
+  async fn extract(parts: &mut http::request::Parts) -> Self {
+    let basic = parts
+      .headers
+      .get(http::header::AUTHORIZATION)
+      .and_then(|v| v.to_str().ok())
+      .and_then(|s| {
+        use axum_extra::headers::Header;
+        let mut iter = std::iter::once(s.parse::<http::HeaderValue>().ok()?);
+        Authorization::<Basic>::decode(&mut std::iter::once(&iter.next()?)).ok()
+      })
+      .map(|auth| auth.0);
 
-  async fn from_request_parts(parts: &mut Parts, _state: &S) -> std::result::Result<Self, Self::Rejection> {
-    let basic = match parts
-      .extract::<TypedHeader<Authorization<Basic>>>()
-      .await
-      .ok() {
-      Some(TypedHeader(Authorization(basic))) => Some(basic),
-      None => None
-    };
+    let referer = parts
+      .headers
+      .get(http::header::REFERER)
+      .and_then(|v| v.to_str().ok())
+      .and_then(|s| {
+        use axum_extra::headers::Header;
+        let val = s.parse::<http::HeaderValue>().ok()?;
+        Referer::decode(&mut std::iter::once(&val)).ok()
+      });
 
-    let referer = match parts
-      .extract::<TypedHeader<Referer>>()
-      .await
-      .ok() {
-      Some(TypedHeader(referer)) => Some(referer),
-      None => None
-    };
-
-    Ok(Claims(basic, referer))
+    Claims(basic, referer)
   }
 }
 
@@ -132,33 +162,30 @@ async fn ldap_auth(config: &Ldap, username: String, password: String) -> respons
   Ok(User::new(username, common_name))
 }
 
-async fn login(user_store: &Arc<RwLock<HashMap<String, User>>>, mut auth: AuthContext, user: User) 
-  -> response::Result<()>
-{
-  user_store.write().await.insert(user.login.clone(), user.clone());
-  auth.login(&user).await.map_err(|e| e.to_string().into())
-}
-
 pub fn request_basic_headers() -> response::Result<HeaderMap> {
   let mut headers = HeaderMap::new();
-  let header = "Basic realm=\"Foreman Reports\"".parse().map_err(|e: InvalidHeaderValue| e.to_string().into())?;
+  let header = "Basic realm=\"Foreman Reports\"".parse().map_err(|e: http::header::InvalidHeaderValue| e.to_string().into())?;
   headers.insert("WWW-Authenticate", header);
   Ok(headers)
 }
 
-pub async fn basic_auth<B>(
+pub async fn basic_auth(
   State(state): State<AppState>,
-  Claims(basic, referer): Claims,
+  mut auth: AuthContext,
   Query(url_params): Query<UrlParams>,
-  auth: AuthContext,
-  request: Request<B>, 
-  next: Next<B>
+  request: Request<axum::body::Body>,
+  next: Next
 ) -> Response {
-  if auth.current_user.is_none() {
+  if auth.user.is_none() {
     let content_type = url_params.accept.unwrap_or_default();
-    let (username, password) = match basic {
+
+    let (mut parts, body) = request.into_parts();
+    let claims = Claims::extract(&mut parts).await;
+    let request = Request::from_parts(parts, body);
+
+    let (username, password) = match claims.0 {
       None => {
-        let headers: Option<HeaderMap> = match referer {
+        let headers: Option<HeaderMap> = match claims.1 {
           Some(_) => None,
           None => match request_basic_headers() {
             Err(e) => return (e, content_type).into_axum_response(),
@@ -174,17 +201,20 @@ pub async fn basic_auth<B>(
 
     let user = match ldap_auth(
       &state.configuration.ldap,
-      username, 
+      username,
       password
     ).await {
       Err(e) => return (e, content_type).into_axum_response(),
       Ok(u) => u
     };
-    
-    match login(&state.user_store, auth, user).await {
-      Err(e) => return (e, content_type).into_axum_response(),
-      Ok(_) => ()
+
+    state.user_store.write().await.insert(user.login.clone(), user.clone());
+    if auth.login(&user).await.is_err() {
+      return (Error::new(StatusCode::SERVICE_UNAVAILABLE, "session error".to_string()),
+              content_type).into_axum_response();
     }
+
+    return next.run(request).await;
   }
   next.run(request).await
 }
@@ -197,8 +227,8 @@ pub struct UserLogin {
 
 pub async fn post_login(
   State(state): State<AppState>,
-  auth: AuthContext,
-  extract::Json(user_login): extract::Json<UserLogin>
+  mut auth: AuthContext,
+  axum::extract::Json(user_login): axum::extract::Json<UserLogin>
 ) -> Response {
 
   let user = match ldap_auth(&state.configuration.ldap, user_login.username, user_login.password)
@@ -206,9 +236,10 @@ pub async fn post_login(
     Err(e) => return (e, ContentType::Json).into_axum_response(),
     Ok(u) => u
   };
-  match login(&state.user_store, auth, user).await {
-    Err(e) => return (e, ContentType::Json).into_axum_response(),
-    Ok(_) => ()
+  state.user_store.write().await.insert(user.login.clone(), user.clone());
+  if auth.login(&user).await.is_err() {
+    return (Error::new(StatusCode::SERVICE_UNAVAILABLE, "session error".to_string()),
+            ContentType::Json).into_axum_response();
   }
   StringResponse(ContentType::Json, "User logged".to_string()).into_response()
 }
