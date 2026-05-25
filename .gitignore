@@ -1,3 +1,4 @@
 ./ignore
 ./backend/Cargo.lock
-./backend/static
+./backend/static/
+./frontend/package-lock.json
