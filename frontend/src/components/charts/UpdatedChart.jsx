@@ -135,7 +135,7 @@ export default function UpdatesChart(props) {
             />
           </div>
           <div>
-            <LegendTable options={tableOptions()} />
+            <LegendTable options={tableOptions()} showHeader={true} />
           </div>
         </div>
       </Match>

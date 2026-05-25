@@ -414,7 +414,11 @@ table.legend {
   margin-left: auto;
   margin-right: auto;
   font-size: var(--text-body-sm-size);
-  width: 80%;
+  width: 100%;
+  max-height: 600px;
+  overflow-y: auto;
+  display: block;
+  padding-right: 10px;
 }
 table.legend tbody tr:hover {
   background: #f5f5f5;
@@ -422,11 +426,30 @@ table.legend tbody tr:hover {
 [data-theme="dark"] table.legend tbody tr:hover {
   background: #1f1f1f;
 }
+table.legend thead tr th:first-child {
+  width: 100%;
+}
+/*
 table.legend tbody tr:first-child {
   border-top: 1px solid var(--color-tertiary);
 }
+*/
+/*
 table.legend tbody tr:last-child {
   border-bottom: 1px solid var(--color-tertiary);
+}
+*/
+table.legend thead tr {
+  border-bottom: 2px solid var(--color-tertiary);
+  position: sticky;
+  top: 0;
+  background-color: var(--body-background-color);
+}
+table.legend tfoot tr {
+  border-top: 2px solid var(--color-tertiary);
+  position: sticky;
+  bottom: 0;
+  background-color: var(--body-background-color);
 }
 table.legend tr th {
   white-space: nowrap;
@@ -555,15 +578,15 @@ div.pagination button:disabled {
 
 p.total {
   white-space: nowrap;
+  padding: 20px 10px 5px 10px;
   color: var(--color-on-surface);
-  padding: 10px;
   font-family: var(--font-label);
   font-size: var(--text-label-lg-size);
   font-weight: var(--text-label-lg-weight);
   letter-spacing: var(--text-label-lg-ls);
   text-align: left;
-  position: absolute;
-  bottom: 5px;
+  /* position: absolute; */
+  /* bottom: 5px; */
 }
 
 /* === HR === */
