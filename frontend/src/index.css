@@ -497,13 +497,15 @@ table.report tr th {
   font-weight: var(--text-label-lg-weight);
   letter-spacing: var(--text-label-lg-ls);
 }
+
+table.report tr th.small-witdh { max-width: 100px; }
+table.report tr th.medium-witdh { max-width: 300px; }
+table.report tr th.big-witdh { max-width: 400px; }
+
 table.report tr td {
   padding: 2px 5px;
   white-space: nowrap;
 }
-table.report tr td.small-witdh { max-width: 100px; }
-table.report tr td.medium-witdh { max-width: 300px; }
-table.report tr td.big-witdh { max-width: 400px; }
 
 td.overflow {
   overflow: hidden;
