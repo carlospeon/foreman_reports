@@ -7,7 +7,7 @@ import { A } from "@solidjs/router";
 import { useContextMessage } from "../common/MessageProvider";
 import { ReportTable } from "../common/Tables";
 import JsonMessage from "../common/JsonMessage";
-import { capitalize, formatNumber } from "../common/Util";
+import { capitalize, formatDate } from "../common/Util";
 
 import {
   flexRender,
@@ -33,7 +33,7 @@ export default function Inventory() {
       class: 'text-align-left', footer: v => capitalize(v.column.id), },
     { accessorKey: 'comment', header: () => 'Description', cell: v => v.getValue(), 
       class: 'text-align-left overflow', footer: () => 'Description', },
-    { accessorKey: 'facts_datetime', header: 'Facts date', cell: v => v.getValue(), 
+    { accessorKey: 'facts_datetime', header: 'Facts date', cell: v => formatDate(v.getValue()), 
       class: 'text-align-left', footer: 'Facts date', },
     { accessorKey: 'location', header: v => capitalize(v.column.id), cell: v => v.getValue(), 
       class: 'text-align-left', footer: v => capitalize(v.column.id), },
