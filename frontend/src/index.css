@@ -498,9 +498,31 @@ table.report tr th {
   letter-spacing: var(--text-label-lg-ls);
 }
 
-table.report tr th.small-witdh { max-width: 100px; }
-table.report tr th.medium-witdh { max-width: 300px; }
-table.report tr th.big-witdh { max-width: 400px; }
+table.report tr th.bu,
+table.report tr th.os_version,
+table.report tr th.cpu,
+table.report tr th.memorysize,
+table.report tr th.dfsize
+{ max-width: 60px; }
+
+table.report tr th.compliant,
+table.report tr th.security_erratas,
+table.report tr th.older_errata
+{ max-width: 100px; }
+
+table.report tr th.location,
+table.report tr th.environment
+{ max-width: 150px; }
+
+table.report tr th.facts_datetime
+{ max-width: 200px; }
+
+table.report tr th.hostname,
+table.report tr th.comment,
+table.report tr th.facts_key,
+table.report tr th.errata_list,
+table.report tr th.cve_list
+{ min-width: 400px; }
 
 table.report tr td {
   padding: 2px 5px;

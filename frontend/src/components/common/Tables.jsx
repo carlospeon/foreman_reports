@@ -72,7 +72,7 @@ export function ReportTable(props) {
               <tr>
                 <For each={headerGroup.headers}>
                   {header => (
-                    <th>
+                    <th class={header.column.columnDef.accessorKey}>
                       <div class={header.column.columnDef.class +
                               (header.column.getCanSort()?' cursor-pointer':'')}
                         onClick={header.column.getToggleSortingHandler()}>

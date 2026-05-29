@@ -6,7 +6,7 @@ import { useContextMessage } from "../common/MessageProvider";
 import { createResource, useContext, For } from "solid-js";
 import { ReportTable } from "../common/Tables";
 import JsonMessage from "../common/JsonMessage";
-import { capitalize } from "../common/Util";
+import { capitalize, formatDate } from "../common/Util";
 import NonCompliantByEnvironmentBuChart from "../charts/NonCompliantByEnvironmentBuChart";
 import NonCompliantByBuTable from "../charts/NonCompliantByBuTable";
 
@@ -57,7 +57,7 @@ export default function ErratasTable(props) {
     {
       accessorKey: "updated_at",
       header: "Updated",
-      cell: (v) => v.getValue(),
+      cell: (v) => formatDate(v.getValue()),
       class: "text-align-left",
       footer: "Updated",
     },

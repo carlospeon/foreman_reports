@@ -14,3 +14,14 @@ export function formatNumber(n) {
 export function numberWithCommas(x) {
   return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
+
+export function removeDecimalsFromString(str) {
+  return str.split('.')[0];
+}
+
+export function formatDate(d) {
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: 'short',
+    timeStyle: 'medium'
+  }).format(new Date(d));
+}

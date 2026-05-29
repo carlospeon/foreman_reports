@@ -3,7 +3,7 @@ import { useParams, A } from "@solidjs/router";
 import { useContextMessage } from "./MessageProvider";
 import { ReportTable } from "./Tables";
 import JsonMessage from "./JsonMessage";
-import { capitalize } from "./Util";
+import { capitalize, formatDate } from "./Util";
 // import FactsByEnvironmentChart from "../charts/FactsByEnvironmentChart";
 // import HostsByFactTable from "../charts/HostsByFactTable";
 import FactsAggregation from "./FactsAggregation";
@@ -45,17 +45,17 @@ export default function FactsTable() {
   var columns = () => { 
     var c = [
       { accessorKey: 'hostname', header: v => capitalize(v.column.id), cell: v => v.getValue(), 
-        class: 'text-align-left medium-width', footer: v => capitalize(v.column.id), },
+        class: 'text-align-left', footer: v => capitalize(v.column.id), },
       { accessorKey: 'bu', header: v => capitalize(v.column.id), cell: v => v.getValue(), 
-        class: 'text-align-left small-width', footer: v => capitalize(v.column.id), },
+        class: 'text-align-left', footer: v => capitalize(v.column.id), },
       { accessorKey: 'comment', header: () => 'Description', cell: v => v.getValue(), 
-        class: 'text-align-left overflow big-width', footer: () => 'Description', },
-      { accessorKey: 'facts_datetime', header: 'Facts date', cell: v => v.getValue(), 
-        class: 'text-align-left medium-width', footer: 'Facts date', },
+        class: 'text-align-left overflow', footer: () => 'Description', },
+      { accessorKey: 'facts_datetime', header: 'Facts date', cell: v => formatDate(v.getValue()), 
+        class: 'text-align-left', footer: 'Facts date', },
       { accessorKey: 'location', header: v => capitalize(v.column.id), cell: v => v.getValue(), 
-        class: 'text-align-left medium-width', footer: v => capitalize(v.column.id), },
+        class: 'text-align-left', footer: v => capitalize(v.column.id), },
       { accessorKey: 'environment', header: v => capitalize(v.column.id), cell: v => v.getValue(), 
-        class: 'text-align-left medium-width', footer: v => capitalize(v.column.id), },
+        class: 'text-align-left', footer: v => capitalize(v.column.id), },
     ];
 
     if (!(useParams().fkey === "os_version")) {
@@ -63,14 +63,14 @@ export default function FactsTable() {
         class: 'text-align-right small-width', footer: 'OS', });
     }
     c.push({ accessorKey: 'cpu', header: 'CPU', cell: v => v.getValue(), 
-      class: 'text-align-right small-width', footer: 'CPU', });
+      class: 'text-align-right', footer: 'CPU', });
     c.push({ accessorKey: 'memorysize', header: 'Memory', cell: v => v.getValue(), 
-      class: 'text-align-right small-width', footer: 'Memory', });
+      class: 'text-align-right', footer: 'Memory', });
     c.push({ accessorKey: 'dfsize', header: 'Disk', cell: v => v.getValue(), 
-      class: 'text-align-right small-width', footer: 'Disk', });
+      class: 'text-align-right', footer: 'Disk', });
   
     c.push({ accessorKey: "facts_key", header: useParams().fkey, cell: v => v.getValue(), 
-        class: 'text-align-left medium-width', footer: useParams().fkey, });
+        class: 'text-align-left', footer: useParams().fkey, });
     return c;
   }
 
