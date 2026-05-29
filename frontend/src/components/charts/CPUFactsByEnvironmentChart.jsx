@@ -1,5 +1,4 @@
 import { onMount } from 'solid-js'
-import { Chart, Title, Tooltip, Legend, Colors } from 'chart.js'
 import { Bar } from 'solid-chartjs'
 import { createResource, For } from 'solid-js';
 import { useParams, A } from "@solidjs/router";
@@ -8,6 +7,7 @@ import { useContextMessage } from "../common/MessageProvider";
 import JsonMessage from "../common/JsonMessage";
 import { LegendTable } from '../common/Tables';
 import { createEffect } from 'solid-js';
+import { registerChartPlugins, barOptions } from './chartConfig';
 
 export default function CPUFactsByEnvironmentChart() {
   // const [message, setMessage] = useContextMessage();
@@ -53,35 +53,13 @@ export default function CPUFactsByEnvironmentChart() {
     };
   }
 
-  onMount(() => {
-    Chart.register(Title, Tooltip, Legend, Colors);
-    Chart.defaults.font.size = 13;
-  })
+  onMount(() => registerChartPlugins())
 
   const fallback = () => {
     return (<div><p>Chart is not available</p></div>)
   }
 
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    scales: {
-      y: { title: { display: true, text: 'Online CPUs' }, stacked: true },
-    },
-    plugins: {
-      title: {
-        display: true,
-        text: 'Online CPUs'
-      },
-      // colors: {
-      //   enabled: true,
-      //   forceOverride: true
-      // },
-      legend: {
-        position: 'bottom',
-      },
-    },
-  }
+  const chartOptions = () => barOptions('Online CPUs', 'Online CPUs');
 
 
   var data = {};
@@ -117,10 +95,10 @@ export default function CPUFactsByEnvironmentChart() {
       <Match when={ apiResource.state === 'ready' && apiResource().fetch.status == 200  }>
         <div class="report">
           <div style="height: 400px; width: 600px;">
-            <Bar 
+            <Bar
               fallback={fallback()}
               data={chartData()}
-              options={chartOptions}
+              options={chartOptions()}
             />
           </div>
           {/* <div style="max-width: 900px;">

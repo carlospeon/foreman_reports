@@ -1,5 +1,4 @@
 import { onMount } from 'solid-js'
-import { Chart, Title, Tooltip, Legend, Colors } from 'chart.js'
 import { Bar } from 'solid-chartjs'
 import { createResource, For } from 'solid-js';
 import { useParams, A } from "@solidjs/router";
@@ -7,6 +6,7 @@ import { getCoreRowModel } from '@tanstack/solid-table';
 import { useContextMessage } from "../common/MessageProvider";
 import JsonMessage from "../common/JsonMessage";
 import { LegendTable } from '../common/Tables';
+import { registerChartPlugins, barOptions, CHART_COLORS } from './chartConfig';
 
 export default function HostsByLocationEnvironmentChart() {
   // const [message, setMessage] = useContextMessage();
@@ -40,31 +40,13 @@ export default function HostsByLocationEnvironmentChart() {
   //   };
   // }
 
-  onMount(() => {
-    Chart.register(Title, Tooltip, Legend, Colors);
-    Chart.defaults.font.size = 13;
-  })
+  onMount(() => registerChartPlugins())
 
   const fallback = () => {
     return (<div><p>Chart is not available</p></div>)
   }
 
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    scales: {
-      y: { title: { display: true, text: 'Hosts' }, stacked: true },
-    },
-    plugins: {
-      title: {
-        display: true,
-        text: 'Hosts in Environment by Location'
-      },
-      legend: {
-        position: 'bottom',
-      },
-    },
-  }
+  const chartOptions = () => barOptions('Hosts in Environment by Location', 'Hosts');
 
 
   var data = {};
@@ -89,8 +71,7 @@ export default function HostsByLocationEnvironmentChart() {
     var environments_a = Object.keys(environments).sort();
     var locations_a = Object.keys(locations).sort();
 
-    var colors = ['#36a2eb', '#ff6384', '#4bc0c0', '#ff9f40', '#96f', '#ffcd56', '#c9cbcf',
-                  '#e1b496', '#82d2f5', '#9be1af', '#e1d2af', '#4b646e', '#dc3282' ];
+    var colors = CHART_COLORS;
     var datasets = []; 
     for (var i = 0; i < environments_a.length; i++) {
       var env = environments_a[i];
@@ -139,10 +120,10 @@ export default function HostsByLocationEnvironmentChart() {
       <Match when={ apiResource.state === 'ready' && apiResource().fetch.status == 200  }>
         <div class="report">
           <div style="height: 400px; width: 900px;">
-            <Bar 
+            <Bar
               fallback={fallback()}
               data={chartData()}
-              options={chartOptions}
+              options={chartOptions()}
             />
           </div>
         </div>

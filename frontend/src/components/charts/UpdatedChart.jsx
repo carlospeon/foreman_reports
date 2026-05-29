@@ -1,11 +1,11 @@
 import { onMount } from 'solid-js'
-import { Chart, Title, Tooltip, Legend, Colors } from 'chart.js'
 import { Bar, Doughnut } from 'solid-chartjs'
 import { createResource, For } from 'solid-js';
 import { getCoreRowModel } from '@tanstack/solid-table';
 import { useContextMessage } from "../common/MessageProvider";
 import JsonMessage from "../common/JsonMessage";
 import { LegendTable } from '../common/Tables';
+import { registerChartPlugins, barOptions } from './chartConfig';
 
 export default function UpdatesChart(props) {
   const [message, setMessage] = useContextMessage();
@@ -46,35 +46,13 @@ export default function UpdatesChart(props) {
     };
   }
 
-  onMount(() => {
-    Chart.register(Title, Tooltip, Legend, Colors);
-    Chart.defaults.font.size = 13;
-  })
+  onMount(() => registerChartPlugins())
 
   const fallback = () => {
     return (<div><p>Chart is not available</p></div>)
   }
 
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    scales: {
-      y: { title: { display: true, text: 'Hosts' }, stacked: true},
-    },
-    plugins: {
-      title: {
-        display: true,
-        text: 'Total'
-      },
-      legend: {
-        display: true,
-        position: 'bottom',
-      },
-      colors: {
-        enabled: true,
-      }
-    },
-  }
+  const chartOptions = () => barOptions('Total', 'Hosts');
 
   const chartData = () => {
     return {
@@ -128,10 +106,10 @@ export default function UpdatesChart(props) {
       <Match when={ apiResource.state === 'ready' && apiResource().fetch.status == 200  }>
         <div class="report">
           <div style="height: 400px; width: 300px;">
-            <Bar 
+            <Bar
               fallback={fallback()}
               data={chartData()}
-              options={chartOptions}
+              options={chartOptions()}
             />
           </div>
           <div>

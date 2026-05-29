@@ -1,9 +1,9 @@
 import { onMount } from 'solid-js'
-import { Chart, Title, Tooltip, Legend, Colors } from 'chart.js'
 import { Line } from 'solid-chartjs'
 import { createResource } from 'solid-js';
 import { useContextMessage } from "../common/MessageProvider";
 import JsonMessage from "../common/JsonMessage";
+import { registerChartPlugins, lineOptions } from './chartConfig';
 
 export default function OSHistory() {
   const [message, setMessage] = useContextMessage();
@@ -19,32 +19,13 @@ export default function OSHistory() {
   const [apiResource] = createResource(apiFetch);
   // const [jsonResource] = createResource(apiResource, apiJson);
 
-  onMount(() => {
-    Chart.register(Title, Tooltip, Legend, Colors);
-    Chart.defaults.font.size = 13;
-  })
+  onMount(() => registerChartPlugins())
 
   const fallback = () => {
     return (<div><p>Chart is not available</p></div>)
   }
 
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    scales: {
-      x: { title: { display: true, text: 'Week' }, },
-      y: { title: { display: true, text: 'Hosts' }, },
-    },
-    plugins: {
-      title: {
-        display: true,
-        text: 'Operating System Evolution'
-      },
-      legend: {
-        position: 'bottom',
-      },
-    },
-  }
+  const chartOptions = () => lineOptions('Operating System Evolution', 'Week', 'Hosts');
 
   
   const chartData = () => {
@@ -88,9 +69,9 @@ export default function OSHistory() {
       </Match>
       <Match when={ apiResource.state === 'ready' && apiResource().fetch.status == 200  }>
         <div class="report" style="height: 480px; width: 600px;">
-        <Line fallback={fallback()} 
-          data={chartData()} 
-          options={chartOptions}
+        <Line fallback={fallback()}
+          data={chartData()}
+          options={chartOptions()}
         />
         </div>
       </Match>

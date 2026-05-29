@@ -1,11 +1,11 @@
 import { onMount } from 'solid-js'
-import { Chart, Title, Tooltip, Legend, Colors } from 'chart.js'
 import { Doughnut } from 'solid-chartjs'
-import { getCoreRowModel, createSolidTable } from '@tanstack/solid-table';
-import { createResource, createSignal, For } from 'solid-js';
+import { getCoreRowModel } from '@tanstack/solid-table';
+import { createResource, For } from 'solid-js';
 import { useContextMessage } from "../common/MessageProvider";
 import JsonMessage from "../common/JsonMessage";
 import { LegendTable } from '../common/Tables';
+import { registerChartPlugins, doughnutOptions } from './chartConfig';
 
 export default function DomainsChart() {
   // const [message, setMessage] = useContextMessage();
@@ -37,39 +37,13 @@ export default function DomainsChart() {
     };
   }
 
-  onMount(() => {
-    Chart.register(Title, Tooltip, Legend, Colors);
-    Chart.defaults.font.size = 13;
-  })
+  onMount(() => registerChartPlugins())
 
   const fallback = () => {
     return (<div><p>Chart is not available</p></div>)
   }
 
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: true,
-    plugins: {
-      title: {
-        display: true,
-        text: 'Hosts by Domains'
-      },
-      legend: {
-        position: 'bottom',
-        align: 'start',
-        labels: {
-          generateLabels: (chart) => {
-            const datasets = chart.data.datasets;
-            return datasets[0].data.map((data, i) => ({
-              text: `${chart.data.labels[i]}\: ${data}`,
-              fillStyle: datasets[0].backgroundColor[i],
-              fontColor: '#666',
-            }));
-          },
-        },
-      },
-    },
-  }
+  const chartOptions = () => doughnutOptions('Hosts by Domains');
 
   const chartData = () => {
     return {
@@ -104,10 +78,10 @@ export default function DomainsChart() {
       <Match when={ apiResource.state === 'ready' && apiResource().fetch.status == 200  }>
         <div class="report">
           <div style="height: 550; width: 450px;">
-            <Doughnut 
+            <Doughnut
               fallback={fallback()}
               data={chartData()}
-              options={chartOptions}
+              options={chartOptions()}
             />
           </div>
           <p class="total">Total: { 

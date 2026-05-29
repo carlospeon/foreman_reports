@@ -1,10 +1,10 @@
 import { onMount } from 'solid-js'
-import { Chart, Title, Tooltip, Legend, Colors } from 'chart.js'
 import { Line } from 'solid-chartjs'
 import { createResource } from 'solid-js';
 import { useParams } from "@solidjs/router";
 import { useContextMessage } from "../common/MessageProvider";
 import JsonMessage from "../common/JsonMessage";
+import { registerChartPlugins, lineOptions } from './chartConfig';
 
 
 export default function CPUFactsHistoryChart() {
@@ -33,34 +33,13 @@ export default function CPUFactsHistoryChart() {
   const [apiResource, {mutate, refetch}] = createResource(apiUrl, apiFetch);
 
 
-  onMount(() => {
-    Chart.register(Title, Tooltip, Legend, Colors);
-    Chart.defaults.font.size = 13;
-  })
+  onMount(() => registerChartPlugins())
 
   const fallback = () => {
     return (<div><p>Chart is not available</p></div>)
   }
 
-  Chart.defaults.font.size = 13;
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    scales: {
-      x: { title: { display: true, text: 'Week' }, },
-      y: { title: { display: true, text: 'Online CPU' }, 
-           suggestedMin: 0, },
-    },
-    plugins: {
-      title: {
-        display: true,
-        text: 'CPUs by Fact Evolution'
-      },
-      legend: {
-        position: 'bottom',
-      },
-    },
-  }
+  const chartOptions = () => lineOptions('CPUs by Fact Evolution', 'Week', 'Online CPU', { y: { suggestedMin: 0 } });
 
   const chartData = () => {
     var sets = {};
@@ -106,9 +85,9 @@ export default function CPUFactsHistoryChart() {
       </Match>
       <Match when={ apiResource.state === 'ready' && apiResource().fetch.status == 200  }>
         <div class="report" style="height: 500px; width: 700px;">
-        <Line fallback={fallback()} 
-          data={chartData()} 
-          options={chartOptions}
+        <Line fallback={fallback()}
+          data={chartData()}
+          options={chartOptions()}
         />
         </div>
       </Match>

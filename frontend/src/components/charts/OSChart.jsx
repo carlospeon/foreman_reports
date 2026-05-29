@@ -1,11 +1,11 @@
 import { onMount } from 'solid-js'
-import { Chart, Title, Tooltip, Legend, Colors } from 'chart.js'
 import { Doughnut } from 'solid-chartjs'
-import { getCoreRowModel, createSolidTable } from '@tanstack/solid-table';
+import { getCoreRowModel } from '@tanstack/solid-table';
 import { createResource, For } from 'solid-js';
 import { LegendTable } from '../common/Tables';
 import { useContextMessage } from "../common/MessageProvider";
 import JsonMessage from "../common/JsonMessage";
+import { registerChartPlugins, doughnutOptions } from './chartConfig';
 
 
 export default function OSChart() {
@@ -36,28 +36,13 @@ export default function OSChart() {
     };
   }
 
-  onMount(() => {
-    Chart.register(Title, Tooltip, Legend, Colors);
-    Chart.defaults.font.size = 13;
-  })
+  onMount(() => registerChartPlugins())
 
   const fallback = () => {
     return (<div><p>Chart is not available</p></div>)
   }
 
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      title: {
-        display: true,
-        text: 'Operating System'
-      },
-      legend: {
-        position: 'bottom',
-      },
-    },
-  }
+  const chartOptions = () => doughnutOptions('Operating System');
 
   const chartData = () => {
     return {
@@ -91,10 +76,10 @@ export default function OSChart() {
       <Match when={ apiResource.state === 'ready' && apiResource().fetch.status == 200  }>
         <div class="report">
           <div style="width: 300px; height: 300px;">
-            <Doughnut 
+            <Doughnut
               fallback={fallback()}
               data={chartData()}
-              options={chartOptions}
+              options={chartOptions()}
             />
           </div>
           <LegendTable options={tableOptions()} />

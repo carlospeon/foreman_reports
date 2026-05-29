@@ -112,6 +112,10 @@ body, p, h1, h2, h3 {
   --rounded-xl: 16px;
   --rounded-full: 9999px;
 
+  /* Semantic (interaction) */
+  --color-hover-row: #f5f5f5;
+  --color-disabled-border: #e5e7eb;
+
   /* Semantic (layout) */
   --root-max-width: 1500px;
   --body-background-color: var(--color-surface);
@@ -120,10 +124,13 @@ body, p, h1, h2, h3 {
 }
 
 [data-theme="dark"] {
+  --color-primary: #FFFFFF;
   --color-surface: #121212;
   --color-on-surface: #FFFFFF;
   --color-neutral: #000000;
   --color-tertiary: #6B7280;
+  --color-hover-row: #1f1f1f;
+  --color-disabled-border: #374151;
   --body-background-color: #000000;
   --root-background-color: #121212;
   --root-foreground-color: #FFFFFF;
@@ -223,7 +230,7 @@ textarea {
   letter-spacing: var(--text-body-md-ls);
   padding: 12px;
   border: 1px solid var(--color-tertiary);
-  border-radius: var(--rounded-sm);
+  border-radius: var(--rounded-none);
   color: var(--color-on-surface);
   background-color: var(--color-surface);
   transition: border-color 0.2s ease;
@@ -262,10 +269,10 @@ select option:checked {
 
 button[type="submit"] {
   font-family: var(--font-label);
-  font-size: var(--text-label-md-size);
-  font-weight: var(--text-label-md-weight);
+  font-size: var(--text-body-md-size);
+  font-weight: 700;
   letter-spacing: var(--text-label-md-ls);
-  line-height: var(--text-label-md-lh);
+  line-height: var(--text-body-md-lh);
   color: var(--color-on-surface);
   background: transparent;
   border: 1px solid var(--color-primary);
@@ -330,6 +337,12 @@ div.message {
   border-left: 2px solid var(--color-tertiary);
 }
 
+div.message a {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  font-weight: 700;
+}
+
 div.notice,
 div.error {
   background-color: var(--color-surface);
@@ -369,7 +382,7 @@ div.report h3 {
 }
 
 [data-theme="dark"] div.report {
-  background: #1a1a1a;
+  background: var(--color-secondary);
 }
 
 /* === Links Navigation === */
@@ -421,10 +434,7 @@ table.legend {
   padding-right: 10px;
 }
 table.legend tbody tr:hover {
-  background: #f5f5f5;
-}
-[data-theme="dark"] table.legend tbody tr:hover {
-  background: #1f1f1f;
+  background: var(--color-hover-row);
 }
 table.legend thead tr th:first-child {
   width: 100%;
@@ -476,10 +486,7 @@ table.report thead tr th {
   border-bottom: 1px solid var(--color-tertiary);
 }
 table.report tbody tr:hover {
-  background: #f5f5f5;
-}
-[data-theme="dark"] table.report tbody tr:hover {
-  background: #1f1f1f;
+  background: var(--color-hover-row);
 }
 table.report tr th {
   white-space: nowrap;
@@ -494,6 +501,10 @@ table.report tr td {
   padding: 2px 5px;
   white-space: nowrap;
 }
+table.report tr td.small-witdh { max-width: 100px; }
+table.report tr td.medium-witdh { max-width: 300px; }
+table.report tr td.big-witdh { max-width: 400px; }
+
 td.overflow {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -569,7 +580,7 @@ div.pagination input[type=number] {
 div.pagination button[disabled],
 div.pagination button:disabled {
   color: var(--color-tertiary);
-  border-color: #e5e7eb;
+  border-color: var(--color-disabled-border);
   opacity: 0.5;
   cursor: default;
 }
@@ -609,9 +620,9 @@ hr {
   position: fixed;
   top: 0;
   width: 100%;
-  background: var(--color-surface);
-  color: var(--color-on-surface);
-  height: 50px;
+  background: var(--color-on-surface);
+  color: var(--color-surface);
+  height: 60px;
   z-index: 10;
 }
 
@@ -633,10 +644,10 @@ hr {
 
 .menu-items a {
   text-decoration: none;
-  color: var(--color-on-surface);
+  color: var(--color-surface);
   font-family: var(--font-label);
-  font-size: var(--text-label-lg-size);
-  font-weight: var(--text-label-lg-weight);
+  font-size: var(--text-body-md-size);
+  font-weight: 700;
   letter-spacing: var(--text-label-lg-ls);
   transition: opacity 0.2s ease;
 }
@@ -690,7 +701,7 @@ hr {
     height: 3px;
     width: 100%;
     border-radius: 2px;
-    background: var(--color-on-surface);
+    background: var(--color-surface);
   }
 
   .navbar .hamburger-lines .line1 {
@@ -709,7 +720,7 @@ hr {
 
   .navbar .menu-items {
     padding-top: 30px;
-    background: var(--color-surface);
+    background: var(--color-on-surface);
     height: 100vh;
     max-width: 300px;
     transform: translate(-150%);
@@ -726,7 +737,7 @@ hr {
 
   .navbar .menu-items li {
     margin-bottom: 1.5rem;
-    font-size: var(--text-body-lg-size);
+    /*font-size: var(--text-body-lg-size);*/
   }
 
   .navbar input[type="checkbox"]:checked ~ .menu-items {

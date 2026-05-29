@@ -1,5 +1,4 @@
 import { onMount } from 'solid-js'
-import { Chart, Title, Tooltip, Legend, Colors } from 'chart.js'
 import { Bar } from 'solid-chartjs'
 import { createResource, For } from 'solid-js';
 import { useParams, A } from "@solidjs/router";
@@ -8,6 +7,7 @@ import { useContextMessage } from "../common/MessageProvider";
 import JsonMessage from "../common/JsonMessage";
 import { LegendTable } from '../common/Tables';
 import { createEffect } from 'solid-js';
+import { registerChartPlugins, barOptions, CHART_COLORS } from './chartConfig';
 
 export default function NonCompliantByEnvironmentBuChart(props) {
   // const [message, setMessage] = useContextMessage();
@@ -41,31 +41,13 @@ export default function NonCompliantByEnvironmentBuChart(props) {
     };
   }
 
-  onMount(() => {
-    Chart.register(Title, Tooltip, Legend, Colors);
-    Chart.defaults.font.size = 13;
-  })
+  onMount(() => registerChartPlugins())
 
   const fallback = () => {
     return (<div><p>Chart is not available</p></div>)
   }
 
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    scales: {
-      y: { title: { display: true, text: 'Hosts' }, stacked: true },
-    },
-    plugins: {
-      title: {
-        display: true,
-        text: 'Non Compliant'
-      },
-      legend: {
-        position: 'bottom',
-      },
-    },
-  }
+  const chartOptions = () => barOptions('Non Compliant', 'Hosts');
 
 
   var data = {};
@@ -90,8 +72,7 @@ export default function NonCompliantByEnvironmentBuChart(props) {
     var bus_a = Object.keys(bus).sort();
     var environments_a = Object.keys(environments).sort();
 
-    var colors = ['#36a2eb', '#ff6384', '#4bc0c0', '#ff9f40', '#96f', '#ffcd56', '#c9cbcf',
-                  '#e1b496', '#82d2f5', '#9be1af', '#e1d2af', '#4b646e', '#dc3282' ];
+    var colors = CHART_COLORS;
     var datasets = []; 
     for (var i = 0; i < bus_a.length; i++) {
       var bu = bus_a[i];
@@ -140,10 +121,10 @@ export default function NonCompliantByEnvironmentBuChart(props) {
       <Match when={ apiResource.state === 'ready' && apiResource().fetch.status == 200  }>
         <div class="report">
           <div style="height: 400px; width: 600px;">
-            <Bar 
+            <Bar
               fallback={fallback()}
               data={chartData()}
-              options={chartOptions}
+              options={chartOptions()}
             />
           </div>
           {/* <div style="max-width: 900px;">

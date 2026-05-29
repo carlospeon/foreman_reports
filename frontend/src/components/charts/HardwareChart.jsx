@@ -1,11 +1,11 @@
 import { onMount } from 'solid-js'
-import { Chart, Title, Tooltip, Legend, Colors } from 'chart.js'
 import { Doughnut } from 'solid-chartjs'
-import { flexRender, getCoreRowModel, createSolidTable } from '@tanstack/solid-table';
+import { getCoreRowModel } from '@tanstack/solid-table';
 import { createResource, For } from 'solid-js';
 import { useContextMessage } from "../common/MessageProvider";
 import JsonMessage from "../common/JsonMessage";
 import { LegendTable } from '../common/Tables';
+import { registerChartPlugins, doughnutOptions } from './chartConfig';
 
 export default function HardwareChart() {
   // const [message, setMessage] = useContextMessage();
@@ -36,38 +36,17 @@ export default function HardwareChart() {
     };
   }
 
-  onMount(() => {
-    Chart.register(Title, Tooltip, Legend, Colors);
-    Chart.defaults.font.size = 13;
-  })
+  onMount(() => registerChartPlugins())
 
   const fallback = () => {
     return (<div><p>Chart is not available</p></div>)
   }
 
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      title: {
-        display: true,
-        text: 'Hardware                  '
-      },
-      legend: {
-        position: 'right',
-        labels: {
-          generateLabels: (chart) => {
-            const datasets = chart.data.datasets;
-            return datasets[0].data.map((data, i) => ({
-              text: `${chart.data.labels[i]}\: ${data}`,
-              fillStyle: datasets[0].backgroundColor[i],
-              fontColor: '#666',
-            }))
-          },
-        },
-      },
-    },
-  }
+  const chartOptions = () => {
+    const opts = doughnutOptions('Hardware                  ');
+    opts.plugins.legend.position = 'right';
+    return opts;
+  };
 
   const chartData = () => {
     return {
@@ -102,10 +81,10 @@ export default function HardwareChart() {
       <Match when={ apiResource.state === 'ready' && apiResource().fetch.status == 200  }>
         <div class="report" >
           <div style="height:400px; width:1100px;">
-            <Doughnut 
+            <Doughnut
               fallback={fallback()}
               data={chartData()}
-              options={chartOptions}
+              options={chartOptions()}
             />
           </div>
           {/*<div class="margin-left-20">

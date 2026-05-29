@@ -1,11 +1,11 @@
 import { onMount } from 'solid-js'
-import { Chart, Title, Tooltip, Legend, Colors } from 'chart.js'
-import { Bar,Bubble } from 'solid-chartjs'
+import { Bar, Bubble } from 'solid-chartjs'
 import { createResource, For } from 'solid-js';
 import { getCoreRowModel } from '@tanstack/solid-table';
 import { useContextMessage } from "../common/MessageProvider";
 import JsonMessage from "../common/JsonMessage";
 import { LegendTable } from '../common/Tables';
+import { registerChartPlugins, getThemeColors } from './chartConfig';
 
 export default function NonUpdatedByAdminEnvironmentChart(props) {
   // const [message, setMessage] = useContextMessage();
@@ -26,46 +26,37 @@ export default function NonUpdatedByAdminEnvironmentChart(props) {
   // const [jsonResource] = createResource(apiResource, apiJson);
 
 
-  onMount(() => {
-    Chart.register(Title, Tooltip, Legend, Colors);
-    Chart.defaults.font.size = 13;
-  })
+  onMount(() => registerChartPlugins())
 
   const fallback = () => {
     return (<div><p>Chart is not available</p></div>)
   }
 
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    barPercentage: 1.0, 
-    categoryPercentage: 1.0,
-    scales: {
-      y: { title: { display: false }, ticks: { display: false }, stacked: true },
-
-    },
-    plugins: {
-      title: {
-        display: true,
-        text: 'Non Updated heat map'
+  const chartOptions = () => {
+    const colors = getThemeColors();
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      barPercentage: 1.0,
+      categoryPercentage: 1.0,
+      scales: {
+        x: { ticks: { color: colors.textSecondary }, grid: { color: colors.grid } },
+        y: { title: { display: false }, ticks: { display: false }, stacked: true, grid: { color: colors.grid } },
       },
-      legend: {
-        display: false,
-        // position: 'bottom',
-      },
-      tooltip: {
-        callbacks: {
-          // title: function(context) {
-          //   return "Non Updated";
-          // },
-          label: function(context) {
-            var d = data[context.dataset.label][context.label] || 0;
-            return context.dataset.label + ': ' + d;
+      plugins: {
+        title: { display: true, text: 'Non Updated heat map', color: colors.text },
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              var d = data[context.dataset.label][context.label] || 0;
+              return context.dataset.label + ': ' + d;
+            }
           }
         }
-      }
-    },
-  }
+      },
+    };
+  };
 
   function dataBackgroundColors(valuesArray) {
     var colors = [];
@@ -153,10 +144,10 @@ export default function NonUpdatedByAdminEnvironmentChart(props) {
       <Match when={ apiResource.state === 'ready' && apiResource().fetch.status == 200  }>
         <div class="report">
           <div style="height: 300px; width: 500px;">
-            <Bar 
+            <Bar
               fallback={fallback()}
               data={chartData()}
-              options={chartOptions}
+              options={chartOptions()}
             />
           </div>
           {/* <div>
