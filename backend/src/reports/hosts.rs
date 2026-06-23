@@ -1,9 +1,10 @@
 use sqlx::{FromRow};
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 use crate::{MatView, Param, SQL, Sql, SqlParams, report::ReportHistory};
 
-#[derive(Debug, FromRow, Deserialize, Serialize)]
+#[derive(Debug, FromRow, Deserialize, Serialize, ToSchema)]
 #[allow(non_snake_case)]
 pub struct HostInfo {
     pub hostname: String,
@@ -31,7 +32,7 @@ impl<'a> SQL<'a> for HostInfo {
   fn refresh_mvs() -> Option<Vec<MatView<'a>>> { Some(vec![MatView::from("full_report")]) }
 }
 
-#[derive(Debug, FromRow, Deserialize, Serialize)]
+#[derive(Debug, FromRow, Deserialize, Serialize, ToSchema)]
 #[allow(non_snake_case)]
 pub struct HostsGroupbyOsmajor {
     osmajor: String,
@@ -54,7 +55,7 @@ impl<'a> SQL<'a> for HostsGroupbyOsmajor {
   fn refresh_mvs() -> Option<Vec<MatView<'a>>> { Some(vec![MatView::from("full_report")]) }
 }
 
-#[derive(Debug, FromRow, Deserialize, Serialize)]
+#[derive(Debug, FromRow, Deserialize, Serialize, ToSchema)]
 #[allow(non_snake_case)]
 pub struct HostsGroupbyOSmajorHistory {
   // pub gathered_at: Option<chrono::DateTime<chrono::Utc>>,
@@ -67,7 +68,7 @@ impl<'a> SQL<'a> for HostsGroupbyOSmajorHistory {
   fn params() -> SqlParams<'a> { Some(vec![Param::Str("hosts_groupby_osmajor".into())]) }
 }
 
-#[derive(Debug, FromRow, Deserialize, Serialize)]
+#[derive(Debug, FromRow, Deserialize, Serialize, ToSchema)]
 #[allow(non_snake_case)]
 pub struct HostsGroupbyEnvironment {
     environment: String,
@@ -86,7 +87,7 @@ impl<'a> SQL<'a> for HostsGroupbyEnvironment {
   fn refresh_mvs() -> Option<Vec<MatView<'a>>> { Some(vec!["full_report".into()]) }
 }
 
-#[derive(Debug, FromRow, Deserialize, Serialize)]
+#[derive(Debug, FromRow, Deserialize, Serialize, ToSchema)]
 #[allow(non_snake_case)]
 pub struct HostsGroupbyLocation {
     location: String,
@@ -105,7 +106,7 @@ impl<'a> SQL<'a> for HostsGroupbyLocation {
   fn refresh_mvs() -> Option<Vec<MatView<'a>>> { Some(vec!["full_report".into()]) }
 }
 
-#[derive(Debug, FromRow, Deserialize, Serialize)]
+#[derive(Debug, FromRow, Deserialize, Serialize, ToSchema)]
 #[allow(non_snake_case)]
 pub struct HostsGroupbyLocationEnvironment {
     location: String,
@@ -126,7 +127,7 @@ impl<'a> SQL<'a> for HostsGroupbyLocationEnvironment {
   fn refresh_mvs() -> Option<Vec<MatView<'a>>> { Some(vec!["full_report".into()]) }
 }
 
-#[derive(Debug, FromRow, Deserialize, Serialize)]
+#[derive(Debug, FromRow, Deserialize, Serialize, ToSchema)]
 #[allow(non_snake_case)]
 pub struct HostsGroupbyAdminGroup {
     admingroup: String,
@@ -152,7 +153,7 @@ impl<'a> SQL<'a> for HostsGroupbyAdminGroup {
   fn refresh_mvs() -> Option<Vec<MatView<'a>>> { Some(vec!["full_report".into()]) }
 }
 
-#[derive(Debug, FromRow, Deserialize, Serialize)]
+#[derive(Debug, FromRow, Deserialize, Serialize, ToSchema)]
 #[allow(non_snake_case)]
 pub struct HostsGroupbyBU {
     bu: String,
@@ -171,7 +172,7 @@ impl<'a> SQL<'a> for HostsGroupbyBU {
   fn refresh_mvs() -> Option<Vec<MatView<'a>>> { Some(vec!["full_report".into()]) }
 }
 
-#[derive(Debug, FromRow, Deserialize, Serialize)]
+#[derive(Debug, FromRow, Deserialize, Serialize, ToSchema)]
 #[allow(non_snake_case)]
 pub struct HostsGroupbyHardware {
     product_name: String,
@@ -194,7 +195,7 @@ impl<'a> SQL<'a> for HostsGroupbyHardware {
   fn refresh_mvs() -> Option<Vec<MatView<'a>>> { Some(vec!["full_report".into()]) }
 }
 
-#[derive(Debug, FromRow, Deserialize, Serialize)]
+#[derive(Debug, FromRow, Deserialize, Serialize, ToSchema)]
 #[allow(non_snake_case)]
 pub struct HostsGroupbyHardwareHistory {
   // pub gathered_at: Option<chrono::DateTime<chrono::Utc>>,
@@ -207,7 +208,7 @@ impl<'a> SQL<'a> for HostsGroupbyHardwareHistory {
   fn params() -> SqlParams<'a> { Some(vec![Param::Str("hosts_groupby_hardware".into())]) }
 }
 
-#[derive(Debug, FromRow, Deserialize, Serialize)]
+#[derive(Debug, FromRow, Deserialize, Serialize, ToSchema)]
 #[allow(non_snake_case)]
 pub struct HostsGroupbyDomain {
     domain: String,
@@ -225,7 +226,7 @@ impl<'a> SQL<'a> for HostsGroupbyDomain {
   //fn refresh_mvs() -> Option<Vec<&'a str>> { Some(vec!["full_report".into()]) }
   fn refresh_mvs() -> Option<Vec<MatView<'a>>> { Some(vec!["full_report".into()]) }
 }
-#[derive(Debug, FromRow, Deserialize, Serialize)]
+#[derive(Debug, FromRow, Deserialize, Serialize, ToSchema)]
 #[allow(non_snake_case)]
 pub struct HostsGroupbyDomainHistory {
   // pub gathered_at: Option<chrono::DateTime<chrono::Utc>>,
@@ -238,7 +239,7 @@ impl<'a> SQL<'a> for HostsGroupbyDomainHistory {
   fn params() -> SqlParams<'a> { Some(vec![Param::Str("hosts_groupby_domain".into())]) }
 }
 
-#[derive(Debug, FromRow, Deserialize, Serialize)]
+#[derive(Debug, FromRow, Deserialize, Serialize, ToSchema)]
 #[allow(non_snake_case)]
 pub struct VisibleFacts {
   name: String,
@@ -254,7 +255,7 @@ impl<'a> SQL<'a> for VisibleFacts {
   }
 }
 
-#[derive(Debug, FromRow, Deserialize, Serialize)]
+#[derive(Debug, FromRow, Deserialize, Serialize, ToSchema)]
 #[allow(non_snake_case)]
 pub struct Fact {
   name: String,

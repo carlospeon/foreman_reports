@@ -2,6 +2,7 @@ use sqlx::{FromRow};
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
 use bigdecimal::BigDecimal;
+use utoipa::ToSchema;
 
 use crate::{MatView, Param, SQL, Sql, SqlParams};
 
@@ -36,7 +37,7 @@ impl<'a> SQL<'a> for ReportHistory {
   }
 }
 
-#[derive(Debug, FromRow, Serialize, Deserialize)]
+#[derive(Debug, FromRow, Serialize, Deserialize, ToSchema)]
 #[allow(non_snake_case)]
 pub struct OSReport {
     pub hostname: String,
@@ -82,12 +83,14 @@ impl<'a> SQL<'a> for OSReport {
   fn refresh_mvs() -> Option<Vec<MatView<'a>>> { Some(vec!["full_report".into()]) }
 }
 
-#[derive(Debug, FromRow, Serialize, Deserialize)]
+#[derive(Debug, FromRow, Serialize, Deserialize, ToSchema)]
 #[allow(non_snake_case)]
 pub struct OSResourcesByLocation {
     pub location:  Option<String>,
     pub cpu: Option<i64>,
+    #[schema(value_type = Option<f64>)]
     pub memorysize: Option<BigDecimal>,
+    #[schema(value_type = Option<f64>)]
     pub dfsize: Option<BigDecimal>,
 }
 
@@ -105,7 +108,7 @@ impl<'a> SQL<'a> for OSResourcesByLocation {
   fn refresh_mvs() -> Option<Vec<MatView<'a>>> { Some(vec!["full_report".into()]) }
 }
 
-#[derive(Debug, FromRow, Deserialize, Serialize)]
+#[derive(Debug, FromRow, Deserialize, Serialize, ToSchema)]
 #[allow(non_snake_case)]
 pub struct FactsReport {
     pub hostname: String,
@@ -154,7 +157,7 @@ impl<'a> SQL<'a> for FactsReport {
   fn refresh_mvs() -> Option<Vec<MatView<'a>>> { Some(vec!["full_report".into()]) }
 }
 
-#[derive(Debug, FromRow, Deserialize, Serialize)]
+#[derive(Debug, FromRow, Deserialize, Serialize, ToSchema)]
 #[allow(non_snake_case)]
 pub struct FactsReportGroupByEnvironment {
     pub environment: Option<String>,
@@ -188,7 +191,7 @@ impl<'a> SQL<'a> for FactsReportGroupByEnvironment {
   fn refresh_mvs() -> Option<Vec<MatView<'a>>> { Some(vec!["full_report".into()]) }
 }
 
-#[derive(Debug, FromRow, Deserialize, Serialize)]
+#[derive(Debug, FromRow, Deserialize, Serialize, ToSchema)]
 #[allow(non_snake_case)]
 pub struct CPUFactsReportGroupByEnvironment {
     pub environment: Option<String>,
@@ -222,7 +225,7 @@ impl<'a> SQL<'a> for CPUFactsReportGroupByEnvironment {
   fn refresh_mvs() -> Option<Vec<MatView<'a>>> { Some(vec!["full_report".into()]) }
 }
 
-#[derive(Debug, FromRow, Deserialize, Serialize)]
+#[derive(Debug, FromRow, Deserialize, Serialize, ToSchema)]
 #[allow(non_snake_case)]
 pub struct HostsGroupbyFact {
     pub facts_key: String,
@@ -295,7 +298,7 @@ impl<'a> SQL<'a> for HostsGroupbyFact {
 //   fn refresh_mvs() -> Option<Vec<&'a str>> { Some(vec!["full_report"]) }
 // }
 
-#[derive(Debug, FromRow, Deserialize, Serialize)]
+#[derive(Debug, FromRow, Deserialize, Serialize, ToSchema)]
 #[allow(non_snake_case)]
 pub struct OSEOL {
   pub os: String,
@@ -312,7 +315,7 @@ impl<'a> SQL<'a> for OSEOL {
 }
 
 
-#[derive(Debug, FromRow, Serialize, Deserialize)]
+#[derive(Debug, FromRow, Serialize, Deserialize, ToSchema)]
 #[allow(non_snake_case)]
 pub struct HostFactsReport {
     pub hostname: String,
@@ -323,6 +326,7 @@ pub struct HostFactsReport {
     pub location:  Option<String>,
     pub environment:  Option<String>,
     pub subnet:  Option<String>,
+    #[schema(value_type = Option<Object>)]
     pub facts: Option<JsonValue>,
 }
 
@@ -344,7 +348,7 @@ impl<'a> SQL<'a> for HostFactsReport {
   fn refresh_mvs() -> Option<Vec<MatView<'a>>> { Some(vec!["full_report".into()]) }
 }
 
-#[derive(Debug, FromRow, Deserialize, Serialize)]
+#[derive(Debug, FromRow, Deserialize, Serialize, ToSchema)]
 #[allow(non_snake_case)]
 pub struct CPUFactsHistory {
   // pub gathered_at: Option<chrono::DateTime<chrono,b::Utc>>,
@@ -357,7 +361,7 @@ impl<'a> SQL<'a> for CPUFactsHistory {
   fn params() -> SqlParams<'a> { Some(vec![Param::Str("cpus_groupby_fact".into())]) }
 }
 
-#[derive(Debug, FromRow, Deserialize, Serialize)]
+#[derive(Debug, FromRow, Deserialize, Serialize, ToSchema)]
 #[allow(non_snake_case)]
 pub struct OpenscapReport {
     pub hostname: String,
@@ -367,6 +371,7 @@ pub struct OpenscapReport {
     pub location:  Option<String>,
     pub environment:  Option<String>,
     pub os:  Option<String>,
+    #[schema(value_type = Option<Object>)]
     pub metrics:  Option<JsonValue>,
 }
 
@@ -387,7 +392,7 @@ impl<'a> SQL<'a> for OpenscapReport {
   fn refresh_mvs() -> Option<Vec<MatView<'a>>> { Some(vec![MatView { name: "openscap_report", ttl: Some(8)}]) }
 }
 
-#[derive(Debug, FromRow, Deserialize, Serialize)]
+#[derive(Debug, FromRow, Deserialize, Serialize, ToSchema)]
 #[allow(non_snake_case)]
 pub struct OpenscapHostReport {
     pub hostname: String,
@@ -397,7 +402,9 @@ pub struct OpenscapHostReport {
     pub location:  Option<String>,
     pub environment:  Option<String>,
     pub os:  Option<String>,
+    #[schema(value_type = Option<Object>)]
     pub metrics:  Option<JsonValue>,
+    #[schema(value_type = Option<Object>)]
     pub result:  Option<JsonValue>,
 }
 
@@ -421,7 +428,7 @@ impl<'a> SQL<'a> for OpenscapHostReport {
   fn refresh_mvs() -> Option<Vec<MatView<'a>>> { Some(vec![MatView { name: "openscap_report", ttl: Some(8)}]) }
 }
 
-#[derive(Debug, FromRow, Deserialize, Serialize)]
+#[derive(Debug, FromRow, Deserialize, Serialize, ToSchema)]
 #[allow(non_snake_case)]
 pub struct OpenscapRuleReport {
     pub hostname: String,

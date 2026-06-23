@@ -5,6 +5,8 @@ use axum::{
 };
 use axum_login::AuthManagerLayerBuilder;
 use tower_sessions::{MemoryStore, SessionManagerLayer};
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
 
 use clap::Parser;
 use http::Method;
@@ -30,6 +32,8 @@ pub mod response;
 pub mod authentication;
 pub mod configuration;
 pub mod reports;
+#[allow(dead_code)]
+pub mod api_doc;
 
 use crate::configuration::Configuration;
 use crate::authentication::User;
@@ -218,6 +222,8 @@ async fn main() {
         .nest("/api/openscap", openscap_routes)
         .route_layer(middleware::from_fn_with_state(state.clone(), authentication::basic_auth))
         .route("/api/login", post(authentication::post_login))
+        .merge(SwaggerUi::new("/api/doc")
+            .url("/api/doc/openapi.json", api_doc::ApiDoc::openapi()))
         .with_state(state)
         .layer(TraceLayer::new_for_http()
             .make_span_with(trace::DefaultMakeSpan::new()

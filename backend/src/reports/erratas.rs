@@ -1,10 +1,11 @@
 use sqlx::{FromRow};
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 use crate::{MatView, SQL, Sql};
 
 
-#[derive(Debug, FromRow, Deserialize, Serialize)]
+#[derive(Debug, FromRow, Deserialize, Serialize, ToSchema)]
 #[allow(non_snake_case)]
 pub struct Erratas {
   errata_id: String,

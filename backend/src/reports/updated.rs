@@ -1,5 +1,6 @@
 use sqlx::{FromRow};
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 use crate::{MatView, SQL, Sql};
 
@@ -25,7 +26,7 @@ const UPDATED_CONDITION: &'static str = "facts->>'security_erratas' = '0'";
 //                                             where bu = $1 )";
 const COMPLIANT_CONDITION: &'static str = "cast(facts->>'older_errata' as date) >= compliant_update_date";
 
-#[derive(Debug, FromRow, Deserialize, Serialize)]
+#[derive(Debug, FromRow, Deserialize, Serialize, ToSchema)]
 #[allow(non_snake_case)]
 pub struct Updated {
   pub total: i64,
@@ -58,7 +59,7 @@ impl<'a> SQL<'a> for Updated {
 }
 
 
-#[derive(Debug, FromRow, Deserialize, Serialize)]
+#[derive(Debug, FromRow, Deserialize, Serialize, ToSchema)]
 #[allow(non_snake_case)]
 pub struct UpdatedGroupByEnvironment {
   pub environment: String,
@@ -83,7 +84,7 @@ impl<'a> SQL<'a> for UpdatedGroupByEnvironment {
   fn refresh_mvs() -> Option<Vec<MatView<'a>>> { Some(vec!["full_report".into()]) }
 }
 
-#[derive(Debug, FromRow, Deserialize, Serialize)]
+#[derive(Debug, FromRow, Deserialize, Serialize, ToSchema)]
 #[allow(non_snake_case)]
 pub struct UpdatedGroupByLocation {
   pub location: String,
@@ -108,7 +109,7 @@ impl<'a> SQL<'a> for UpdatedGroupByLocation {
   fn refresh_mvs() -> Option<Vec<MatView<'a>>> { Some(vec!["full_report".into()]) }
 }
 
-#[derive(Debug, FromRow, Deserialize, Serialize)]
+#[derive(Debug, FromRow, Deserialize, Serialize, ToSchema)]
 #[allow(non_snake_case)]
 pub struct NonUpdatedGroupByAdminEnvironment {
   pub admin: String,
@@ -144,7 +145,7 @@ impl<'a> SQL<'a> for NonUpdatedGroupByAdminEnvironment {
 }
 
 
-#[derive(Debug, FromRow, Deserialize, Serialize)]
+#[derive(Debug, FromRow, Deserialize, Serialize, ToSchema)]
 #[allow(non_snake_case)]
 pub struct UpdatedCompliant {
   pub total: i64,
@@ -177,7 +178,7 @@ impl<'a> SQL<'a> for UpdatedCompliant {
   //fn refresh_mvs() -> Option<Vec<&'a str>> { Some(vec!["full_report", "content_view_releases"]) }
   fn refresh_mvs() -> Option<Vec<MatView<'a>>> { Some(vec!["full_report".into(), "content_view_releases".into()]) }
 }
-#[derive(Debug, FromRow, Deserialize, Serialize)]
+#[derive(Debug, FromRow, Deserialize, Serialize, ToSchema)]
 #[allow(non_snake_case)]
 pub struct UpdatedGroupByEnvironmentCompliant {
   pub environment: String,
@@ -202,7 +203,7 @@ impl<'a> SQL<'a> for UpdatedGroupByEnvironmentCompliant {
   //fn refresh_mvs() -> Option<Vec<&'a str>> { Some(vec!["full_report", "content_view_releases"]) }
   fn refresh_mvs() -> Option<Vec<MatView<'a>>> { Some(vec!["full_report".into(), "content_view_releases".into()]) }
 }
-#[derive(Debug, FromRow, Deserialize, Serialize)]
+#[derive(Debug, FromRow, Deserialize, Serialize, ToSchema)]
 #[allow(non_snake_case)]
 pub struct UpdatedGroupByLocationCompliant {
   pub location: String,
@@ -228,7 +229,7 @@ impl<'a> SQL<'a> for UpdatedGroupByLocationCompliant {
   fn refresh_mvs() -> Option<Vec<MatView<'a>>> { Some(vec!["full_report".into(), "content_view_releases".into()]) }
 }
 
-#[derive(Debug, FromRow, Deserialize, Serialize)]
+#[derive(Debug, FromRow, Deserialize, Serialize, ToSchema)]
 #[allow(non_snake_case)]
 pub struct NonUpdatedGroupByAdminEnvironmentCompliant {
   pub admin: String,
@@ -264,7 +265,7 @@ impl<'a> SQL<'a> for NonUpdatedGroupByAdminEnvironmentCompliant {
   fn refresh_mvs() -> Option<Vec<MatView<'a>>> { Some(vec!["full_report".into(), "content_view_releases".into()]) }
 }
 
-#[derive(Debug, FromRow, Deserialize, Serialize)]
+#[derive(Debug, FromRow, Deserialize, Serialize, ToSchema)]
 #[allow(non_snake_case)]
 pub struct ErrataCompliant {
   pub hostname: String,
@@ -387,7 +388,7 @@ impl<'a> SQL<'a> for ErrataCompliant {
     fn refresh_mvs() -> Option<Vec<MatView<'a>>> { Some(vec!["full_report".into(), "content_view_releases".into()]) }
 }
 
-#[derive(Debug, FromRow, Deserialize, Serialize)]
+#[derive(Debug, FromRow, Deserialize, Serialize, ToSchema)]
 #[allow(non_snake_case)]
 pub struct ErrataCompliantGroupbyBu {
   pub bu: String,
@@ -422,7 +423,7 @@ impl<'a> SQL<'a> for  ErrataCompliantGroupbyBu {
     fn refresh_mvs() -> Option<Vec<MatView<'a>>> { Some(vec!["full_report".into(), "content_view_releases".into()]) }
 }
 
-#[derive(Debug, FromRow, Deserialize, Serialize)]
+#[derive(Debug, FromRow, Deserialize, Serialize, ToSchema)]
 #[allow(non_snake_case)]
 pub struct ErrataCompliantGroupbyEnvironmentBu {
   pub environment: String,
@@ -456,7 +457,7 @@ impl<'a> SQL<'a> for  ErrataCompliantGroupbyEnvironmentBu {
 }
 
 
-#[derive(Debug, FromRow, Deserialize, Serialize)]
+#[derive(Debug, FromRow, Deserialize, Serialize, ToSchema)]
 #[allow(non_snake_case)]
 pub struct ContentViews {
   pub id: i32,
