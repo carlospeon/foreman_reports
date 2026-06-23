@@ -144,8 +144,9 @@ async fn main() {
 
     let static_service = ServeDir::new("static").not_found_service(ServeFile::new("static/index.html"));
 
-    let test_routes = Router::new()
-        .route("/test", get(reports::get_test::<Test>));
+    let root_routes = Router::new()
+        .route("/test", get(reports::get_string::<Test>))
+        .route("/refresh", get(reports::get::<MvRefresh>));
 
     let host_routes = Router::new()
         .route("/info/{key}", get(reports::get_with_path_param::<HostInfo>))
@@ -211,7 +212,7 @@ async fn main() {
         .route("/rule/{key}", get(reports::get_with_path_filter::<OpenscapRuleReport>));
 
     let app = Router::new()
-        .nest("/api", test_routes)
+        .nest("/api", root_routes)
         .nest("/api/hosts", host_routes)
         .nest("/api/updated", updated_routes)
         .nest("/api/nonupdated/groupby/", nonupdated_routes)

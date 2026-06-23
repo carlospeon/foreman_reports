@@ -7,6 +7,7 @@ use axum::{
 
 use serde::{Serialize};
 use serde::{Deserialize};
+use sqlx::{FromRow};
 use sqlx::postgres::{PgRow, PgConnection, PgQueryResult};
 use std::borrow::Cow;
 
@@ -58,6 +59,20 @@ impl<'a> SQL<'a> for Test {
   }
 }
 
+#[derive(Debug, FromRow, Deserialize, Serialize)]
+#[allow(non_snake_case)]
+pub struct MvRefresh {
+    pub result: String
+}
+impl<'a> SQL<'a> for MvRefresh {
+  fn sql() -> Sql<'a> {
+    "select 'refreshing materialized views' as result".into()
+  }
+  fn refresh_mvs() -> Option<Vec<MatView<'a>>> { Some(vec![MatView { name: "full_report", ttl: Some(0)},
+                                                           MatView { name: "content_view_releases", ttl: Some(0)},
+                                                           MatView { name: "openscap_report", ttl: Some(0)}]) }
+}
+
 pub struct MatView<'a> {
     pub name: &'a str,
     pub ttl: Option<i32>
@@ -105,7 +120,7 @@ where
     }
 }
 
-async fn test<T>(DatabaseConnection(dbconn): DatabaseConnection) 
+async fn query_scalar<T>(DatabaseConnection(dbconn): DatabaseConnection) 
   -> Result<String> 
 where
   T: for<'a> SQL<'a>
@@ -119,7 +134,7 @@ where
 
 }
 
-pub async fn get_test<T>(
+pub async fn get_string<T>(
   State(_state): State<AppState>,
   database_connection: DatabaseConnection,
   url_params: Query<UrlParams>,
@@ -130,7 +145,7 @@ where
 
   let content_type = url_params.accept.unwrap_or_default();
 
-  match test::<T>(database_connection).await {
+  match query_scalar::<T>(database_connection).await {
     Err(error) => (error, content_type).into_axum_response(),
     Ok(result) => StringResponse(content_type, result).into_response()
   }

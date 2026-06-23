@@ -332,7 +332,7 @@ div.padding-top-60 {
 div.message {
   color: var(--color-on-surface);
   padding: var(--spacing-sm);
-  margin: 20px auto;
+  margin: 100px auto;
   width: max-content;
   border-left: 2px solid var(--color-tertiary);
 }
@@ -688,6 +688,77 @@ hr {
 .menu-items a:hover {
   opacity: 0.6;
   text-decoration: none;
+}
+
+/* === Refresh Button === */
+
+.refresh-item {
+  margin-left: auto !important;
+  margin-right: 20px !important;
+}
+
+.refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  user-select: none;
+}
+
+.refresh-btn[aria-disabled="true"] {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.refresh-icon {
+  transition: transform 0.3s ease;
+}
+
+.refresh-btn.refreshing .refresh-icon {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* === Toast Error === */
+
+.toast-error {
+  position: fixed;
+  top: 60px;
+  left: 0;
+  width: 100%;
+  background: var(--color-error);
+  color: #fff;
+  text-align: center;
+  padding: 8px 40px 8px 8px;
+  font-size: var(--text-body-sm-size);
+  z-index: 9;
+  animation: toast-in 0.3s ease;
+}
+
+.toast-close {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+}
+
+.toast-close:hover {
+  opacity: 0.7;
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* === Responsive (max-width: 800px) === */
