@@ -1,5 +1,7 @@
 ignore/
 .claude/
+frontend/package-lock.json
 backend/Cargo.lock
 backend/static/
-frontend/package-lock.json
+postgresql/itx/
+axinecgrafana1/

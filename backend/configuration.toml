@@ -9,10 +9,9 @@ materialized_view_ttl = 1
 max_connections = 10
 
 [ldap]
-#url = "ldaps://axingc.central.inditex.grp:3269"
 url = "ldaps://localhost:3269"
-domain = "central.inditex.grp"
-search = "dc=central,dc=inditex,dc=grp"
-member_of = "CN=foremanreports,OU=Produccion,OU=Programas,OU=Grupos,OU=Arteixo,OU=Sedes,DC=central,DC=inditex,DC=grp"
+domain = "domain.internal"
+search = "dc=domain,dc=internal"
+member_of = "CN=foremanreports,OU=Produccion,DC=domain,DC=internal"
 
 
