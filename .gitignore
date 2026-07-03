@@ -1,6 +1,7 @@
 ignore/
 .claude/
 frontend/package-lock.json
+backend/.cargo
 backend/Cargo.lock
 backend/static/
 postgresql/itx/
