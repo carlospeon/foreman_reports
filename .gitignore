@@ -1,6 +1,7 @@
 ignore/
 .claude/
 frontend/package-lock.json
+frontend/node_modules/
 backend/.cargo
 backend/Cargo.lock
 backend/static/
