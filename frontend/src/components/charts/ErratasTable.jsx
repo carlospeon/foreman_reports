@@ -76,6 +76,13 @@ export default function ErratasTable(props) {
       footer: (v) => capitalize(v.column.id),
     },
     {
+      accessorKey: "content_view",
+      header: (v) => capitalize(v.column.id),
+      cell: (v) => v.getValue(),
+      class: "text-align-left",
+      footer: (v) => capitalize(v.column.id),
+    },
+    {
       accessorKey: "os_version",
       header: "OS",
       cell: (v) => v.getValue(),

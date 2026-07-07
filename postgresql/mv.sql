@@ -6,6 +6,8 @@ select
   h.name as hostname,
   t.name as location,
   e.name as environment,
+  kcv.id as content_view_id,
+  kcv.name as content_view_name,
   h.last_report as last_report,
   h.updated_at as updated_at,
   su.name as subnet,
@@ -73,6 +75,8 @@ from digital.hosts h
     on kcvecf.content_view_environment_id = kcve.id
   inner join digital.katello_environments e 
     on kcve.environment_id = e.id
+  inner join digital.katello_content_views kcv
+    on kcve.content_view_id = kcv.id
   left join (
     digital.nics ni inner join digital.subnets su on
     su.id = ni.subnet_id
@@ -167,6 +171,8 @@ select
   h.name as hostname,
   t.name as location,
   e.name as environment,
+  kcv.id as content_view_id,
+  kcv.name as content_view_name,
   h.last_report as last_report,
   h.updated_at as updated_at,
   su.name as subnet,
@@ -234,6 +240,8 @@ from sscc.hosts h
     on kcvecf.content_view_environment_id = kcve.id
   inner join sscc.katello_environments e 
     on kcve.environment_id = e.id
+  inner join sscc.katello_content_views kcv
+    on kcve.content_view_id = kcv.id
   left join (
     sscc.nics ni inner join sscc.subnets su on
     su.id = ni.subnet_id

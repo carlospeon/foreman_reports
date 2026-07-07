@@ -7,6 +7,9 @@ import HostsByBUChart from '../charts/HostsByBUChart';
 import EnvironmentChart from '../charts/EnvironmentChart';
 import LocationChart from '../charts/LocationChart';
 import AdminGroupChart from '../charts/AdminGroupChart';
+import OSChart from '../charts/OSChart';
+import OSHistory from '../charts/OSHistory';
+import OSEOLTable from '../charts/OSEOLTable';
 import DomainsChart from '../charts/DomainsChart';
 import DomainsHistory from '../charts/DomainsHistory';
 import HardwareChart from '../charts/HardwareChart';
@@ -30,6 +33,9 @@ export default function Home() {
     {/*</div>
         <hr />
         <div class="flex">*/}
+          <OSChart/>
+          <OSHistory />
+          <OSEOLTable />
           <DomainsChart/>
           <DomainsHistory/>
     {/*</div>

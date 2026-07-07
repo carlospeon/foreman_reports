@@ -169,7 +169,7 @@ impl<'a> SQL<'a> for UpdatedCompliant {
             then 1 else 0 end) as supported,
           sum(case when {} and ( {} or {} )
             then 1 else 0 end) as updated
-      from full_report r join content_views c on r.bu = c.bu
+      from full_report r left join content_views c on r.bu = c.bu and r.content_view_id = c.ccv_id
     ) q
     order by total asc", 
     SUPPORTED_CONDITION, SUPPORTED_CONDITION, UPDATED_CONDITION, COMPLIANT_CONDITION).into()
@@ -194,7 +194,7 @@ impl<'a> SQL<'a> for UpdatedGroupByEnvironmentCompliant {
           then 1 else 0 end) as supported,
         sum(case when {} and ( {} or {} )
           then 1 else 0 end) as updated
-      from full_report r join content_views c on r.bu = c.bu
+      from full_report r left join content_views c on r.bu = c.bu and r.content_view_id = c.ccv_id
       group by environment
       order by grouping(environment) asc, 1",
       SUPPORTED_CONDITION, SUPPORTED_CONDITION, UPDATED_CONDITION, COMPLIANT_CONDITION).into()
@@ -219,7 +219,7 @@ impl<'a> SQL<'a> for UpdatedGroupByLocationCompliant {
           then 1 else 0 end) as supported,
         sum(case when {} and ( {} or {} )
           then 1 else 0 end) as updated
-      from full_report r join content_views c on r.bu = c.bu
+      from full_report r left join content_views c on r.bu = c.bu and r.content_view_id = c.ccv_id
       group by location
       order by grouping(location) asc, 1",
       SUPPORTED_CONDITION, SUPPORTED_CONDITION, UPDATED_CONDITION, COMPLIANT_CONDITION).into()
@@ -254,7 +254,7 @@ impl<'a> SQL<'a> for NonUpdatedGroupByAdminEnvironmentCompliant {
           count(r.id) as total,
           sum(case when {} and ( {} or {} )
             then 0 else 1 end) as non_updated
-          from full_report r join content_views c on r.bu = c.bu
+          from full_report r left join content_views c on r.bu = c.bu and r.content_view_id = c.ccv_id
         group by admin,environment
       ) q
     order by admin asc, environment asc",
@@ -274,6 +274,7 @@ pub struct ErrataCompliant {
   pub updated_at: Option<chrono::NaiveDateTime>,
   pub location:  Option<String>,
   pub environment:  Option<String>,
+  pub content_view:  Option<String>,
   pub os_version:  Option<String>,
   pub kernel_release:  Option<String>,
   pub boot_time:  Option<String>,
@@ -342,6 +343,7 @@ impl<'a> SQL<'a> for ErrataCompliant {
         updated_at,
         location,
         environment,
+        content_view_name as content_view,
         facts->>'os_version'       as os_version,
         facts->>'kernel_release'   as kernel_release,
         facts->>'boot_time'        as boot_time,
@@ -355,7 +357,7 @@ impl<'a> SQL<'a> for ErrataCompliant {
         facts->>'older_errata'     as older_errata,
         facts->>'errata_list'      as errata_list,
         facts->>'cve_list'         as cve_list
-      from full_report r join content_views c on r.bu = c.bu
+      from full_report r join content_views c on r.bu = c.bu and r.content_view_id = c.ccv_id
       order by security_erratas desc, hostname asc", 
       SUPPORTED_CONDITION, UPDATED_CONDITION, COMPLIANT_CONDITION,
       SUPPORTED_CONDITION).into()
@@ -368,6 +370,7 @@ impl<'a> SQL<'a> for ErrataCompliant {
             updated_at,
             location,
             environment,
+            content_view,
             os_version,
             kernel_release,
             boot_time,
